@@ -8,36 +8,61 @@ const PhotoSchema = new mongoose.Schema<Photo>({
   description: { type: String, required: true },
   url: { type: String, required: true },
   thumbnailUrl: { type: String, required: true },
+  category: { type: String, required: true },
+  tags: [{ type: String, required: true }],
   metadata: {
     width: { type: Number, required: true },
     height: { type: Number, required: true },
-    camera: {
-      make: String,
-      model: String,
-      settings: {
-        iso: Number,
-        aperture: String,
-        shutterSpeed: String,
-        focalLength: String,
-      },
-    },
+    format: { type: String, required: true },
+    size: { type: Number, required: true },
+    takenAt: { type: Date },
     location: {
-      name: String,
-      latitude: Number,
-      longitude: Number,
+      latitude: { type: Number },
+      longitude: { type: Number },
+      name: { type: String }
     },
-    takenAt: Date,
+    camera: {
+      make: { type: String },
+      model: { type: String },
+      settings: {
+        iso: { type: Number },
+        aperture: { type: String },
+        shutterSpeed: { type: String },
+        focalLength: { type: String }
+      }
+    }
   },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+  uploadedAt: { type: Date, required: true, default: Date.now },
+  updatedAt: { type: Date, required: true, default: Date.now }
+}, {
+  timestamps: { createdAt: 'uploadedAt', updatedAt: 'updatedAt' }
 });
 
 const PhotoModel = mongoose.models.Photo || mongoose.model('Photo', PhotoSchema);
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get('category');
+    const search = searchParams.get('search');
+
     await connectToMongoDB();
-    const photos = await PhotoModel.find().sort({ createdAt: -1 });
+    
+    let query: any = {};
+    
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const photos = await PhotoModel.find(query).sort({ uploadedAt: -1 });
     return NextResponse.json(photos);
   } catch (error) {
     console.error('Error fetching photos:', error);
@@ -50,10 +75,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const photo = await request.json();
+    const body = await request.json();
     await connectToMongoDB();
-    const newPhoto = await PhotoModel.create(photo);
-    return NextResponse.json(newPhoto, { status: 201 });
+    const photo = await PhotoModel.create(body);
+    return NextResponse.json(photo);
   } catch (error) {
     console.error('Error creating photo:', error);
     return NextResponse.json(

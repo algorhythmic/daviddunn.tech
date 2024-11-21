@@ -12,6 +12,19 @@ export interface BlogPost {
   readingTime: number;
   status: 'draft' | 'published';
   featuredImage?: string;
+  // SEO metadata
+  seoTitle?: string;
+  seoDescription?: string;
+  // Table of contents
+  tableOfContents?: {
+    items: TableOfContentsItem[];
+  };
+}
+
+export interface TableOfContentsItem {
+  title: string;
+  url: string;
+  items?: TableOfContentsItem[];
 }
 
 export interface Photo {
@@ -19,33 +32,39 @@ export interface Photo {
   title: string;
   description: string;
   url: string;
-  thumbnailUrl: string;
+  thumbnailUrl?: string;
   category: string;
+  albumId: string;
   tags: string[];
   metadata: {
-    width: number;
-    height: number;
-    format: string;
-    size: number;
-    takenAt?: Date;
-    location?: {
-      latitude: number;
-      longitude: number;
-      name: string;
-    };
+    dateTaken: Date;
     camera?: {
       make: string;
       model: string;
-      settings?: {
-        iso: number;
-        aperture: string;
-        shutterSpeed: string;
-        focalLength: string;
+    };
+    location?: {
+      name: string;
+      coordinates: {
+        lat: number;
+        lng: number;
       };
     };
   };
-  uploadedAt: Date;
-  updatedAt: Date;
+  isFeatured?: boolean;
+}
+
+export interface Album {
+  _id: string;
+  title: string;
+  description: string;
+  coverPhotoUrl: string;
+  category: string;
+  tags: string[];
+  photoCount: number;
+  dateCreated: Date;
+  dateUpdated: Date;
+  keywords: string[];
+  location?: string;
 }
 
 // Supabase Schemas

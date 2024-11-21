@@ -50,7 +50,7 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
             >
               <div className="aspect-[4/3] w-full overflow-hidden">
                 <Image
-                  src={photo.thumbnailUrl}
+                  src={photo.thumbnailUrl || photo.url}
                   alt={photo.title}
                   width={500}
                   height={375}
@@ -87,13 +87,13 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4" />
-                    <span className="truncate">{photo.metadata.location.name}</span>
+                    <span className="truncate">{photo.metadata.location?.name}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Location: {photo.metadata.location.name}</p>
+                  <p>Location: {photo.metadata.location?.name}</p>
                   <p className="text-xs">
-                    {photo.metadata.location.latitude}, {photo.metadata.location.longitude}
+                    {photo.metadata.location?.latitude}, {photo.metadata.location?.longitude}
                   </p>
                 </TooltipContent>
               </Tooltip>

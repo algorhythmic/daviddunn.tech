@@ -7,60 +7,48 @@ import {
   useState,
   ReactNode,
 } from 'react';
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
+interface User {
+  username: string;
+}
+
 interface AuthContextType {
-  session: User | null;
+  session: { user: User } | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Simulated session storage
+let currentSession: { user: User } | null = null;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<User | null>(null);
+  const [session, setSession] = useState<{ user: User } | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    setSession(currentSession);
+    setLoading(false);
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      throw error;
+  const signIn = async (username: string, password: string) => {
+    if (username === 'admin' && password === 'admin') {
+      currentSession = { user: { username: 'admin' } };
+      setSession(currentSession);
+      router.push('/admin');
+      return;
     }
-
-    router.push('/admin');
+    throw new Error('Invalid credentials');
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
-    router.push('/login');
+    currentSession = null;
+    setSession(null);
+    router.push('/admin/login');
   };
 
   return (
@@ -84,7 +72,7 @@ export function useRequireAuth() {
 
   useEffect(() => {
     if (!loading && !session) {
-      router.push('/login');
+      router.push('/admin/login');
     }
   }, [session, loading, router]);
 

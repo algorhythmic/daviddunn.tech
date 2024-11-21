@@ -35,13 +35,13 @@ export default function PhotoModal({ photo, onClose }: PhotoModalProps) {
           {photo.description && (
             <DialogDescription>{photo.description}</DialogDescription>
           )}
-          <Button
-            className="absolute right-4 top-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
-            onClick={onClose}
-          >
-            <X className="h-6 w-6" />
-          </Button>
         </DialogHeader>
+        <Button
+          className="absolute right-4 top-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+          onClick={onClose}
+        >
+          <X className="h-6 w-6" />
+        </Button>
         
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
           <Image
