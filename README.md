@@ -17,7 +17,7 @@ My personal portfolio website built with Next.js 14, TypeScript, and Tailwind CS
 - **Framework:** Next.js 14
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
-- **UI Components:** Radix UI
+- **UI Components:** Radix UI & shadcn/ui
 - **Database:** MongoDB & Supabase
 - **Authentication:** NextAuth.js
 - **Deployment:** Vercel
