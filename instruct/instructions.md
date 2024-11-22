@@ -100,3 +100,40 @@ A modern, performant personal website built with Next.js, React, and TypeScript,
 2. Performance tuning
 3. Documentation
 4. Testing and deployment
+
+## Current Issues
+
+1. No CSRF protection
+2. No rate limiting for login attempts
+3. No proper session invalidation
+4. No remember me functionality
+5. No password reset capability
+
+## Authentication Improvements
+
+1. Implement Proper Route Protection:
+    Add middleware protection for all admin routes
+    Implement proper session validation
+    Add CSRF protection
+2. Improve Session Management:
+    Use HTTP-only cookies
+    Implement proper session expiration
+    Add secure session storage
+3. Enhance Security:
+    Add rate limiting
+    Implement proper password hashing
+    ~~Add CSRF tokens~~
+    Add proper error handling
+4. Clean Up Architecture:
+    Consolidate login pages
+    Implement consistent auth state management
+    Add proper TypeScript types for auth
+
+## Libraries and Tools
+
+1. NextAuth.js for authentication
+2. ~~Iron Session for session management~~
+3. Zod for validation
+4. @auth/supabase-adapter for Supabase integration
+5. ~~@upstash/ratelimit for rate limiting~~
+6. ~~@upstash/redis for secure session storage~~

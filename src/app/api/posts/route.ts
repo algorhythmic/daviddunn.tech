@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToMongoDB } from '@/lib/db';
-import { Photo } from '@/models/photo';
+import { Post } from '@/models/post';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
 
@@ -9,14 +9,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const search = searchParams.get('search');
-    const limit = parseInt(searchParams.get('limit') || '12');
+    const limit = parseInt(searchParams.get('limit') || '10');
     const page = parseInt(searchParams.get('page') || '1');
+    const published = searchParams.get('published') !== 'false'; // Default to true
 
     await connectToMongoDB();
     
-    let query: any = {};
+    let query: any = { published };
     
-    if (category && category !== 'All') {
+    if (category) {
       query.category = category;
     }
     
@@ -24,28 +25,28 @@ export async function GET(request: Request) {
       query.$text = { $search: search };
     }
 
-    const totalPhotos = await Photo.countDocuments(query);
-    const totalPages = Math.ceil(totalPhotos / limit);
+    const totalPosts = await Post.countDocuments(query);
+    const totalPages = Math.ceil(totalPosts / limit);
     
-    const photos = await Photo.find(query)
-      .sort({ dateTaken: -1 })
+    const posts = await Post.find(query)
+      .sort({ publishedAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
     return NextResponse.json({
-      photos,
+      posts,
       pagination: {
         currentPage: page,
         totalPages,
-        totalPhotos,
+        totalPosts,
         hasMore: page < totalPages
       }
     });
   } catch (error) {
-    console.error('Error fetching photos:', error);
+    console.error('Error fetching posts:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch photos' },
+      { error: 'Failed to fetch posts' },
       { status: 500 }
     );
   }
@@ -65,14 +66,19 @@ export async function POST(request: Request) {
     const data = await request.json();
     await connectToMongoDB();
 
-    const photo = new Photo(data);
-    await photo.save();
+    // Set publishedAt if the post is being published
+    if (data.published) {
+      data.publishedAt = new Date();
+    }
 
-    return NextResponse.json(photo, { status: 201 });
+    const post = new Post(data);
+    await post.save();
+
+    return NextResponse.json(post, { status: 201 });
   } catch (error) {
-    console.error('Error creating photo:', error);
+    console.error('Error creating post:', error);
     return NextResponse.json(
-      { error: 'Failed to create photo' },
+      { error: 'Failed to create post' },
       { status: 500 }
     );
   }
@@ -94,7 +100,7 @@ export async function PUT(request: Request) {
     
     if (!id) {
       return NextResponse.json(
-        { error: 'Photo ID is required' },
+        { error: 'Post ID is required' },
         { status: 400 }
       );
     }
@@ -102,24 +108,29 @@ export async function PUT(request: Request) {
     const data = await request.json();
     await connectToMongoDB();
 
-    const photo = await Photo.findByIdAndUpdate(
+    // Set publishedAt if the post is being published for the first time
+    if (data.published && !data.publishedAt) {
+      data.publishedAt = new Date();
+    }
+
+    const post = await Post.findByIdAndUpdate(
       id,
       { $set: data },
       { new: true, runValidators: true }
     );
 
-    if (!photo) {
+    if (!post) {
       return NextResponse.json(
-        { error: 'Photo not found' },
+        { error: 'Post not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(photo);
+    return NextResponse.json(post);
   } catch (error) {
-    console.error('Error updating photo:', error);
+    console.error('Error updating post:', error);
     return NextResponse.json(
-      { error: 'Failed to update photo' },
+      { error: 'Failed to update post' },
       { status: 500 }
     );
   }
@@ -141,30 +152,30 @@ export async function DELETE(request: Request) {
     
     if (!id) {
       return NextResponse.json(
-        { error: 'Photo ID is required' },
+        { error: 'Post ID is required' },
         { status: 400 }
       );
     }
 
     await connectToMongoDB();
 
-    const photo = await Photo.findByIdAndDelete(id);
+    const post = await Post.findByIdAndDelete(id);
 
-    if (!photo) {
+    if (!post) {
       return NextResponse.json(
-        { error: 'Photo not found' },
+        { error: 'Post not found' },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { message: 'Photo deleted successfully' },
+      { message: 'Post deleted successfully' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting photo:', error);
+    console.error('Error deleting post:', error);
     return NextResponse.json(
-      { error: 'Failed to delete photo' },
+      { error: 'Failed to delete post' },
       { status: 500 }
     );
   }

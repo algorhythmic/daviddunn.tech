@@ -2,12 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 export function MainNav() {
   const pathname = usePathname();
-  const { session } = useAuth();
 
   const items = [
     {
@@ -22,7 +20,7 @@ export function MainNav() {
       title: 'Photos',
       href: '/photos',
     },
-    ...(session ? [{ title: 'Admin', href: '/admin' }] : []),
+    { title: 'Admin', href: '/admin' }, // Temporarily allow access to admin
   ];
 
   return (

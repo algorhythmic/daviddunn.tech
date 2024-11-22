@@ -1,32 +1,31 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import Image from 'next/image'
-import { ModeToggle } from '@/components/ui/mode-toggle'
-import { Button } from '@/components/ui/button'
-import { Menu } from 'lucide-react'
+import Link from 'next/link';
+import Image from 'next/image';
+import { ModeToggle } from '@/components/ui/mode-toggle';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { SocialLinks } from '@/components/layout/SocialLinks'
-import { SearchBar } from '@/components/layout/SearchBar'
-import { useState } from 'react'
-import { usePathname } from 'next/navigation'
-import { useEffect } from 'react'
+} from '@/components/ui/sheet';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { SocialLinks } from '@/components/layout/SocialLinks';
+import { SearchBar } from '@/components/layout/SearchBar';
+import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { 
   Home,
   BookOpen,
   Camera,
   BarChart,
   User,
-  Shield,
-} from 'lucide-react'
-import { Separator } from "@/components/ui/separator"
+} from 'lucide-react';
+import { Separator } from "@/components/ui/separator";
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
@@ -34,17 +33,16 @@ const navigation = [
   { name: 'Blog', href: '/blog', icon: BookOpen },
   { name: 'Photos', href: '/photos', icon: Camera },
   { name: 'About', href: '/about', icon: User },
-  { name: 'Admin', href: '/admin', icon: Shield },
-]
+];
 
 export function NavHeader() {
-  const [isOpen, setIsOpen] = useState(false)
-  const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
   // Close the menu when the pathname changes
   useEffect(() => {
-    setIsOpen(false)
-  }, [pathname])
+    setIsOpen(false);
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -130,5 +128,5 @@ export function NavHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }

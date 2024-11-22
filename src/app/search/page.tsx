@@ -6,6 +6,8 @@ import { Photo, BlogPost } from '@/types/schema'
 import PhotoCard from '@/components/PhotoCard'
 import BlogCard from '@/components/BlogCard'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Loader2 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface SearchResult {
   type: 'photo' | 'blog'
@@ -17,17 +19,23 @@ export default function SearchPage() {
   const query = searchParams.get('q')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<string>('all')
 
   useEffect(() => {
     async function performSearch() {
       setLoading(true)
+      setError(null)
       try {
         const response = await fetch('/api/search?q=' + encodeURIComponent(query || ''))
+        if (!response.ok) {
+          throw new Error('Search request failed')
+        }
         const data = await response.json()
         setResults(data.results)
       } catch (error) {
         console.error('Search failed:', error)
+        setError('Failed to perform search. Please try again.')
         setResults([])
       }
       setLoading(false)
@@ -58,9 +66,13 @@ export default function SearchPage() {
       <h1 className="text-4xl font-bold mb-8">Search Results for "{query}"</h1>
       
       {loading ? (
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading...</p>
+        <div className="flex justify-center items-center min-h-[200px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
+      ) : error ? (
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : results.length > 0 ? (
         <Tabs defaultValue="all" className="w-full" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-8">
@@ -77,12 +89,12 @@ export default function SearchPage() {
 
           <TabsContent value="all">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {results.map((result, index) => {
-                if (result.type === 'photo') {
-                  return <PhotoCard key={`photo-${index}`} photo={result.item as Photo} />
+              {results.map((result) => {
+                if (result.type === 'photo' && 'id' in result.item) {
+                  return <PhotoCard key={`photo-${result.item.id}`} photo={result.item as Photo} />
                 }
-                if (result.type === 'blog') {
-                  return <BlogCard key={`blog-${index}`} post={result.item as BlogPost} />
+                if (result.type === 'blog' && 'id' in result.item) {
+                  return <BlogCard key={`blog-${result.item.id}`} post={result.item as BlogPost} />
                 }
                 return null
               })}
@@ -91,16 +103,18 @@ export default function SearchPage() {
 
           <TabsContent value="photos">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {photoResults.map((result, index) => (
-                <PhotoCard key={index} photo={result.item as Photo} />
+              {photoResults.map((result) => (
+                'id' in result.item && 
+                <PhotoCard key={`photo-${result.item.id}`} photo={result.item as Photo} />
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="blog">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blogResults.map((result, index) => (
-                <BlogCard key={index} post={result.item as BlogPost} />
+              {blogResults.map((result) => (
+                'id' in result.item && 
+                <BlogCard key={`blog-${result.item.id}`} post={result.item as BlogPost} />
               ))}
             </div>
           </TabsContent>

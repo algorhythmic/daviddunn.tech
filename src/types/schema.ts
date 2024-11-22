@@ -7,7 +7,7 @@ export interface BlogPost {
   excerpt: string;
   publishedAt: Date;
   updatedAt: Date;
-  categories: string[];
+  category: string;
   tags: string[];
   readingTime: number;
   status: 'draft' | 'published';
@@ -34,23 +34,19 @@ export interface Photo {
   url: string;
   thumbnailUrl?: string;
   category: string;
-  albumId: string;
+  albumId?: string;
   tags: string[];
   metadata: {
     dateTaken: Date;
-    camera?: {
-      make: string;
-      model: string;
-    };
-    location?: {
-      name: string;
-      coordinates: {
-        lat: number;
-        lng: number;
-      };
+    camera?: string;
+    lens?: string;
+    settings?: {
+      aperture?: string;
+      shutterSpeed?: string;
+      iso?: number;
+      focalLength?: string;
     };
   };
-  isFeatured?: boolean;
 }
 
 export interface Album {
@@ -68,35 +64,23 @@ export interface Album {
 }
 
 // Supabase Schemas
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  parent_id?: string;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface Tag {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface AnalyticsApp {
+export interface StreamlitApp {
   id: string;
   title: string;
   description: string;
   url: string;
   status: 'online' | 'offline' | 'maintenance';
   category: string;
-  tags: string[];
   display_order: number;
   last_checked: Date;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface AppAnalytics {
+  id: string;
+  app_id: string;
+  event_type: 'view' | 'interaction' | 'error';
+  event_data: Record<string, any>;
+  timestamp: Date;
 }

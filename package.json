@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@auth/supabase-adapter": "^1.7.4",
+    "@aws-sdk/client-s3": "^3.697.0",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
     "@next/mdx": "^15.0.3",
@@ -30,8 +32,10 @@
     "clsx": "^2.1.1",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.460.0",
+    "mongodb": "^6.10.0",
     "mongoose": "^8.8.2",
     "next": "^15.0.3",
+    "next-auth": "^4.24.10",
     "next-themes": "^0.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -42,10 +46,14 @@
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.0",
     "remark-toc": "^9.0.0",
+    "sharp": "^0.33.5",
     "tailwind-merge": "^2.5.4",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "uuid": "^11.0.3",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@shadcn/ui": "^0.0.4",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20.11.5",
     "@types/react": "^18.2.48",
@@ -53,10 +61,12 @@
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "autoprefixer": "^10.4.17",
+    "dotenv": "^16.4.5",
     "eslint": "8.56.0",
     "eslint-config-next": "14.1.0",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.3.3"
   },
   "overrides": {

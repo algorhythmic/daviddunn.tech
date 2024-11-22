@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Image as ImageIcon, Plus } from 'lucide-react';
@@ -20,6 +21,8 @@ interface StatItem {
 }
 
 export default function AdminDashboard() {
+  const { data: session, status } = useSession();
+
   const stats: StatItem[] = [
     {
       title: 'Total Blog Posts',
@@ -50,12 +53,25 @@ export default function AdminDashboard() {
       icon: ImageIcon,
       href: '/admin/photos',
       action: {
-        label: 'Upload Photos',
+        label: 'Upload Photo',
         href: '/admin/photos/upload',
         icon: Plus,
       },
     },
   ];
+
+  if (status === 'loading') {
+    return (
+      <div className="container py-8">
+        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 animate-pulse rounded-lg bg-muted" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const recentPosts = testPosts
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())

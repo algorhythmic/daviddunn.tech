@@ -65,7 +65,7 @@ export function SearchBar({ className }: SearchBarProps) {
       )}
     >
       <Input
-        type="search"
+        type="text"
         placeholder={isExpanded ? 'Search photos, blog posts...' : ''}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
