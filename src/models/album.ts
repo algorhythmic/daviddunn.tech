@@ -1,7 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IAlbum {
-  _id: mongoose.Types.ObjectId;
+export interface IAlbum extends Document {
   title: string;
   description: string;
   coverImageUrl: string;
@@ -12,15 +11,30 @@ export interface IAlbum {
   dateUpdated: Date;
 }
 
-const AlbumSchema = new mongoose.Schema<IAlbum>({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  coverImageUrl: { type: String, required: true },
-  location: { type: String, required: true },
+const AlbumSchema = new Schema({
+  title: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  coverImageUrl: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
   tags: [{ type: String }],
-  photoCount: { type: Number, required: true },
-  dateCreated: { type: Date, required: true },
-  dateUpdated: { type: Date, default: Date.now },
+  photoCount: {
+    type: Number,
+    required: true,
+  },
+}, {
+  timestamps: true,
 });
 
 // Add text index for search functionality
@@ -31,4 +45,7 @@ AlbumSchema.index({
   location: 'text',
 });
 
-export const Album = mongoose.models.Album || mongoose.model<IAlbum>('Album', AlbumSchema);
+// Check if the model exists before creating a new one
+const Album = mongoose.models.Album || mongoose.model<IAlbum>('Album', AlbumSchema);
+
+export { Album };

@@ -24,12 +24,15 @@ import {
   Camera,
   BarChart,
   User,
+  AppWindow,
+  LineChart,
 } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
-  { name: 'Analytics', href: '/analytics', icon: BarChart },
+  { name: 'Apps', href: '/apps', icon: AppWindow },
+  { name: 'Analytics', href: '/analytics', icon: LineChart },
   { name: 'Blog', href: '/blog', icon: BookOpen },
   { name: 'Photos', href: '/photos', icon: Camera },
   { name: 'About', href: '/about', icon: User },

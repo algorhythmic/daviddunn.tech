@@ -11,6 +11,21 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
+interface CodeProps {
+  node: any;
+  inline: boolean;
+  className: string;
+  children: React.ReactNode;
+  [key: string]: any;
+}
+
+interface CodeComponentProps extends React.HTMLAttributes<HTMLElement> {
+  node?: any;
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+}
+
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   return (
     <ReactMarkdown
@@ -18,19 +33,19 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       remarkPlugins={[remarkGfm, remarkToc]}
       rehypePlugins={[rehypeSlug]}
       components={{
-        code({ node, inline, className, children, ...props }) {
+        code: ({ node, inline, className, children, ...rest }: CodeComponentProps) => {
           const match = /language-(\w+)/.exec(className || '');
           return !inline && match ? (
             <SyntaxHighlighter
-              style={oneDark}
+              style={oneDark as any}
               language={match[1]}
               PreTag="div"
-              {...props}
+              {...rest}
             >
               {String(children).replace(/\n$/, '')}
             </SyntaxHighlighter>
           ) : (
-            <code className={className} {...props}>
+            <code className={className} {...rest}>
               {children}
             </code>
           );

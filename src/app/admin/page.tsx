@@ -100,8 +100,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="mt-4 space-x-3">
-                  <Link href={stat.href}>View All</Link>
+                <div className="mt-4 flex justify-center">
                   {stat.action && (
                     <Link href={stat.action.href}>
                       <Button size="sm">

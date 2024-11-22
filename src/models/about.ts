@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAboutContent extends Document {
+  statement: string;
   resumeUrl: string;
   previewImages: {
     resume: string;
@@ -17,6 +18,7 @@ export interface IAboutContent extends Document {
 }
 
 const AboutContentSchema = new Schema<IAboutContent>({
+  statement: { type: String, required: true, default: '' },
   resumeUrl: { type: String, required: true },
   previewImages: {
     resume: { type: String, required: true },

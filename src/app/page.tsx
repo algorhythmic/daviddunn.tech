@@ -1,31 +1,40 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { testPosts } from '@/data/testData';
+import { testPosts, testAlbums } from '@/data/testData';
 import { streamlitApps } from '@/data/streamlit-apps';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, ArrowRight } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Album, IAlbum } from '@/models/album';
-import { connectToMongoDB } from '@/lib/db';
+import { AnalyticsPreview } from '@/components/analytics/AnalyticsPreview';
 
-export default async function Home() {
+export default function Home() {
   // Get the latest published blog posts
   const latestPosts = testPosts
     .filter(post => post.status === 'published')
     .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
-    .slice(0, 3);
+    .slice(0, 2);
 
-  // Get the latest photo album
-  let latestAlbum: IAlbum | null = null;
-  try {
-    await connectToMongoDB();
-    latestAlbum = await Album.findOne()
-      .sort({ dateCreated: -1 })
-      .lean() as IAlbum | null;
-  } catch (error) {
-    console.error('Error fetching latest album:', error);
-  }
+  const [currentAppIndex, setCurrentAppIndex] = useState(0);
+  const [currentAlbumIndex, setCurrentAlbumIndex] = useState(0);
+
+  useEffect(() => {
+    const appIntervalId = setInterval(() => {
+      setCurrentAppIndex((prevIndex) => (prevIndex + 1) % streamlitApps.length);
+    }, 5000);
+
+    const albumIntervalId = setInterval(() => {
+      setCurrentAlbumIndex((prevIndex) => (prevIndex + 1) % testAlbums.length);
+    }, 6700);
+
+    return () => {
+      clearInterval(appIntervalId);
+      clearInterval(albumIntervalId);
+    };
+  }, []);
 
   return (
     <main className="container mx-auto px-4 py-2">
@@ -45,13 +54,13 @@ export default async function Home() {
 
         {/* Content Section */}
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Analytics Apps */}
+          {/* Streamlit Apps */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                Analytics Apps
+                Streamlit Apps
                 <Link 
-                  href="/analytics" 
+                  href="/streamlit-apps" 
                   className="text-sm font-normal text-muted-foreground hover:text-primary flex items-center gap-1"
                 >
                   View all
@@ -59,16 +68,18 @@ export default async function Home() {
                 </Link>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {/* Show only the first app */}
-                {streamlitApps.slice(0, 1).map(app => (
+            <CardContent className="flex items-center justify-center">
+              <div className="space-y-2 relative h-[300px] w-full">
+                {/* Show cycling apps */}
+                {streamlitApps.map((app, index) => (
                   <Link 
                     key={app.id} 
-                    href={`/analytics`}
-                    className="block group space-y-1"
+                    href={`/streamlit-apps`}
+                    className={`block group space-y-3 transition-all duration-1000 absolute inset-0 ${
+                      index === currentAppIndex ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    }`}
                   >
-                    <div className="aspect-video relative rounded-md overflow-hidden bg-muted">
+                    <div className="aspect-video relative rounded-md overflow-hidden bg-muted h-[220px]">
                       <Image
                         src={app.imageUrl}
                         alt={app.title}
@@ -76,19 +87,9 @@ export default async function Home() {
                         className="object-cover transition-transform group-hover:scale-105"
                       />
                     </div>
-                    <h3 className="font-medium group-hover:text-primary">
-                      {app.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {app.description}
-                    </p>
-                    <div className="flex gap-2">
-                      <Badge variant="secondary">{app.category}</Badge>
-                      {app.tags.slice(0, 2).map(tag => (
-                        <Badge key={tag} variant="outline">
-                          {tag}
-                        </Badge>
-                      ))}
+                    <div className="pt-2 px-1">
+                      <h3 className="text-lg font-semibold leading-none tracking-tight line-clamp-1 text-center">{app.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2 text-center">{app.description}</p>
                     </div>
                   </Link>
                 ))}
@@ -112,8 +113,7 @@ export default async function Home() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {/* Show only the latest post */}
-                {latestPosts.slice(0, 1).map(post => (
+                {latestPosts.map(post => (
                   <Link 
                     key={post._id} 
                     href={`/blog/${post.slug}`}
@@ -146,7 +146,7 @@ export default async function Home() {
 
           {/* Photo Gallery */}
           <Card className="md:col-span-2">
-            <CardHeader className="pb-2">
+            <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Photo Gallery
                 <Link 
@@ -158,30 +158,37 @@ export default async function Home() {
                 </Link>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="aspect-[21/9] relative rounded-md overflow-hidden">
-                {latestAlbum ? (
-                  <Image
-                    src={latestAlbum.coverImageUrl}
-                    alt={latestAlbum.title}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                    <p className="text-muted-foreground">Photos coming soon</p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-2 text-sm text-muted-foreground">
-                {latestAlbum ? (
-                  `${latestAlbum.title} - ${latestAlbum.description}`
-                ) : (
-                  'Check out my collection of photography, featuring landscapes, urban scenes, and more.'
-                )}
+            <CardContent className="p-6">
+              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}> {/* 16:9 aspect ratio */}
+                {testAlbums.map((album, index) => (
+                  <Link 
+                    key={album._id} 
+                    href={`/photos`}
+                    className={`block group absolute inset-0 transition-all duration-1000 ${
+                      index === currentAlbumIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                    }`}
+                  >
+                    <div className="relative w-full h-full rounded-lg overflow-hidden">
+                      <Image
+                        src={album.coverPhotoUrl}
+                        alt={album.title}
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/60" />
+                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                        <h3 className="text-2xl font-semibold leading-tight line-clamp-1">{album.title}</h3>
+                        <p className="text-sm opacity-90 line-clamp-2 mt-2">{album.description}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </CardContent>
           </Card>
+
+          {/* Analytics Preview */}
+          <AnalyticsPreview />
         </div>
       </div>
     </main>

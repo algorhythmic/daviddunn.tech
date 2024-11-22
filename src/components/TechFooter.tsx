@@ -36,8 +36,13 @@ export default function TechFooter() {
     },
     {
       name: 'MongoDB',
-      icon: '/icons/mongodb.svg',
+      icon: '/icons/mongodb-leaf.svg',
       color: '#47A248'
+    },
+    {
+      name: 'AWS',
+      icon: '/icons/aws.svg',
+      color: '#FF9900'
     }
   ];
 
