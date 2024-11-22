@@ -1,0 +1,69 @@
+{
+    "Name": "DDTechCORSPolicy",
+    "Comment": "CORS policy for daviddunn.tech assets (PDFs, images, and other media)",
+    "CorsConfig": {
+        "AccessControlAllowCredentials": false,
+        "AccessControlAllowHeaders": {
+            "Items": [
+                "*",
+                "Authorization",
+                "Range",
+                "Accept",
+                "Content-Type",
+                "Origin",
+                "If-Match",
+                "If-None-Match",
+                "If-Modified-Since",
+                "If-Unmodified-Since"
+            ]
+        },
+        "AccessControlAllowMethods": {
+            "Items": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+                "PUT",
+                "POST"
+            ]
+        },
+        "AccessControlAllowOrigins": {
+            "Items": [
+                "http://localhost:3000",
+                "https://daviddunn.tech",
+                "https://www.daviddunn.tech"
+            ]
+        },
+        "AccessControlExposeHeaders": {
+            "Items": [
+                "ETag",
+                "Content-Length",
+                "Content-Range",
+                "Content-Type",
+                "Content-Disposition",
+                "Last-Modified",
+                "Accept-Ranges",
+                "Cache-Control"
+            ]
+        },
+        "AccessControlMaxAgeSec": 3600,
+        "OriginOverride": false
+    },
+    "SecurityHeadersConfig": {
+        "ContentTypeOptions": {
+            "Override": true
+        },
+        "ReferrerPolicy": {
+            "ReferrerPolicy": "strict-origin-when-cross-origin",
+            "Override": true
+        }
+    },
+    "CustomHeadersConfig": {
+        "Items": [
+            {
+                "Header": "Timing-Allow-Origin",
+                "Value": "*",
+                "Override": true
+            }
+        ]
+    }
+}

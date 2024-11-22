@@ -1,0 +1,26 @@
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "PUT",
+            "POST",
+            "GET",
+            "HEAD",
+            "OPTIONS"
+        ],
+        "AllowedOrigins": [
+            "http://localhost:3000",
+            "https://daviddunn.tech",
+            "https://unpkg.com"
+        ],
+        "ExposeHeaders": [
+            "ETag",
+            "Content-Length",
+            "Content-Range",
+            "Content-Type"
+        ],
+        "MaxAgeSeconds": 3000
+    }
+]

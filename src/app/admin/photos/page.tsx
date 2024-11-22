@@ -11,24 +11,22 @@ import { useToast } from '@/components/ui/use-toast';
 import { Plus, Upload } from 'lucide-react';
 
 interface PhotoFormData {
+  _id: string;
   title: string;
   description: string;
-  imageUrl: string;
-  thumbnailUrl: string;
+  s3Key: string;
+  url?: string;
   category?: string;
   tags?: string[];
-  metadata: {
-    width: number;
-    height: number;
-    camera?: {
-      make?: string;
-      model?: string;
-      settings?: {
-        iso?: number;
-        aperture?: string;
-        shutterSpeed?: string;
-        focalLength?: string;
-      };
+  dateTaken: Date;
+  metadata?: {
+    camera?: string;
+    lens?: string;
+    settings?: {
+      aperture?: string;
+      shutterSpeed?: string;
+      iso?: number;
+      focalLength?: string;
     };
   };
 }
@@ -69,32 +67,14 @@ export default function AdminPhotos() {
     
     try {
       for (const file of files) {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        // Upload to your storage service (e.g., S3, Cloudinary)
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image');
-        }
-
-        const { imageUrl, thumbnailUrl, metadata } = await uploadResponse.json();
-
-        // Create photo record in MongoDB
-        const photoData: PhotoFormData = {
+        // First, create a photo record and get the pre-signed URL
+        const photoData = {
           title: file.name.split('.')[0], // Default title from filename
           description: '',
-          imageUrl,
-          thumbnailUrl,
-          metadata: {
-            width: metadata.width,
-            height: metadata.height,
-            camera: metadata.camera,
-          },
+          filename: file.name,
+          contentType: file.type,
+          category: 'Uncategorized',
+          dateTaken: new Date(),
         };
 
         const createResponse = await fetch('/api/photos', {
@@ -107,6 +87,21 @@ export default function AdminPhotos() {
 
         if (!createResponse.ok) {
           throw new Error('Failed to create photo record');
+        }
+
+        const { uploadUrl, photo } = await createResponse.json();
+
+        // Upload the file directly to S3 using the pre-signed URL
+        const uploadToS3Response = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        if (!uploadToS3Response.ok) {
+          throw new Error('Failed to upload to S3');
         }
 
         // Refresh photos list
@@ -197,11 +192,11 @@ export default function AdminPhotos() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {photos.map((photo) => (
-          <Card key={photo.imageUrl} className="overflow-hidden">
+          <Card key={photo._id} className="overflow-hidden">
             <CardHeader className="p-0">
               <div className="relative aspect-video">
                 <img
-                  src={photo.thumbnailUrl || photo.imageUrl}
+                  src={photo.url}
                   alt={photo.title}
                   className="object-cover w-full h-full"
                 />

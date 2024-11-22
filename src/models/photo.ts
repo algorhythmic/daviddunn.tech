@@ -4,7 +4,7 @@ export interface IPhoto {
   _id: mongoose.Types.ObjectId;
   title: string;
   description: string;
-  imageUrl: string;
+  s3Key: string;
   category: string;
   tags: string[];
   location?: string;
@@ -25,7 +25,7 @@ export interface IPhoto {
 const PhotoSchema = new mongoose.Schema<IPhoto>({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  imageUrl: { type: String, required: true },
+  s3Key: { type: String, required: true },
   category: { type: String, required: true },
   tags: [{ type: String }],
   location: String,
@@ -38,17 +38,17 @@ const PhotoSchema = new mongoose.Schema<IPhoto>({
       aperture: String,
       shutterSpeed: String,
       iso: Number,
-      focalLength: String,
-    },
-  },
+      focalLength: String
+    }
+  }
 });
 
 // Add text index for search functionality
-PhotoSchema.index({
-  title: 'text',
-  description: 'text',
+PhotoSchema.index({ 
+  title: 'text', 
+  description: 'text', 
   tags: 'text',
-  location: 'text',
+  location: 'text' 
 });
 
 export const Photo = mongoose.models.Photo || mongoose.model<IPhoto>('Photo', PhotoSchema);
