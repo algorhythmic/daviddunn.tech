@@ -63,6 +63,90 @@ daviddunn.tech/
 └── package.json     # Project dependencies
 ```
 
+## Architecture
+
+The website follows a layered architecture pattern, with clear separation of concerns between different components. Here's a detailed view of the system architecture:
+
+```mermaid
+graph TB
+    %% Client Layer
+    subgraph Client[Client Layer]
+        UI[User Interface]
+        Components[UI Components]
+        Pages[Next.js Pages]
+    end
+
+    %% Application Layer
+    subgraph App[Application Layer]
+        API[API Routes]
+        Auth[Authentication]
+        Middleware[Middleware]
+    end
+
+    %% Service Layer
+    subgraph Services[Service Layer]
+        PhotoService[Photo Service]
+        BlogService[Blog Service]
+        AnalyticsService[Analytics Service]
+        S3Service[S3 Service]
+    end
+
+    %% Data Layer
+    subgraph Data[Data Layer]
+        MongoDB[(MongoDB)]
+        S3[(AWS S3)]
+        Supabase[(Supabase)]
+    end
+
+    %% Connections
+    UI --> Components
+    Components --> Pages
+    Pages --> API
+    API --> Middleware
+    Middleware --> Auth
+    API --> Services
+    PhotoService --> MongoDB
+    PhotoService --> S3
+    BlogService --> MongoDB
+    AnalyticsService --> Supabase
+    S3Service --> S3
+    Auth --> NextAuth[NextAuth.js]
+```
+
+A static version of this diagram is also available: [View Architecture Diagram](docs/architecture-diagram.png)
+
+### Architecture Overview
+
+The application is structured into four main layers:
+
+1. **Client Layer**
+   - User Interface components built with React and Tailwind CSS
+   - Reusable UI components using shadcn/ui and Radix UI
+   - Next.js pages for routing and server-side rendering
+
+2. **Application Layer**
+   - API routes for handling HTTP requests
+   - Authentication using NextAuth.js
+   - Middleware for request processing and authorization
+
+3. **Service Layer**
+   - Photo management for gallery features
+   - Blog service for content management
+   - Analytics service for tracking site metrics
+   - S3 service for file storage and retrieval
+
+4. **Data Layer**
+   - MongoDB for storing blog posts and photo metadata
+   - AWS S3 for storing photo files
+   - Supabase for analytics data
+
+### Viewing the Architecture Diagram
+
+To view the architecture diagram in VS Code:
+1. Install the "Markdown Preview Mermaid Support" extension
+2. Open this README.md file
+3. Click the preview icon or press `Cmd+Shift+V` (macOS) / `Ctrl+Shift+V` (Windows/Linux)
+
 ## License
 
 MIT © David Dunn
