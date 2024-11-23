@@ -68,23 +68,9 @@ daviddunn.tech/
 The website follows a layered architecture pattern, with clear separation of concerns between different components. Here's a detailed view of the system architecture:
 
 ```mermaid
-graph TB
-    %% Client Layer
-    subgraph Client[Client Layer]
-        UI[User Interface]
-        Components[UI Components]
-        Pages[Next.js Pages]
-    end
-
-    %% Application Layer
-    subgraph App[Application Layer]
-        API[API Routes]
-        Auth[Authentication]
-        Middleware[Middleware]
-    end
-
+graph LR
     %% Service Layer
-    subgraph Services[Service Layer]
+    subgraph Services ["Service Layer"]
         PhotoService[Photo Service]
         BlogService[Blog Service]
         AnalyticsService[Analytics Service]
@@ -92,25 +78,49 @@ graph TB
     end
 
     %% Data Layer
-    subgraph Data[Data Layer]
+    subgraph Data ["Data Layer"]
         MongoDB[(MongoDB)]
         S3[(AWS S3)]
         Supabase[(Supabase)]
     end
 
-    %% Connections
+    %% Application Layer
+    subgraph App ["Application Layer"]
+        API[API Routes]
+        Auth[Authentication]
+        Middleware[Middleware]
+    end
+
+    %% Client Layer
+    subgraph Client ["Client Layer"]
+        UI[User Interface]
+        Components[UI Components]
+        Pages[Next.js Pages]
+    end
+
+    %% Client Layer Connections
     UI --> Components
     Components --> Pages
     Pages --> API
+
+    %% Application Layer Connections
     API --> Middleware
     Middleware --> Auth
     API --> Services
+
+    %% Service Layer Connections
     PhotoService --> MongoDB
     PhotoService --> S3
     BlogService --> MongoDB
     AnalyticsService --> Supabase
     S3Service --> S3
+
+    %% External Services
     Auth --> NextAuth[NextAuth.js]
+
+    %% Define order
+    Services --> App
+    Data --> Services
 ```
 
 A static version of this diagram is also available: [View Architecture Diagram](docs/architecture-diagram.png)
