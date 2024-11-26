@@ -16,6 +16,20 @@ export function PhotoLightbox({ photos, initialIndex, isOpen, onClose }: PhotoLi
   const [photoSwipe, setPhotoSwipe] = useState<PhotoSwipe | null>(null);
 
   useEffect(() => {
+    if (!photoSwipe) return;
+    
+    const handleClose = () => {
+      if (onClose) onClose();
+    };
+
+    photoSwipe.on('close', handleClose);
+    
+    return () => {
+      photoSwipe.off('close', handleClose);
+    };
+  }, [photoSwipe, onClose]);
+
+  useEffect(() => {
     if (!isOpen) {
       if (photoSwipe) {
         photoSwipe.destroy();
@@ -40,17 +54,13 @@ export function PhotoLightbox({ photos, initialIndex, isOpen, onClose }: PhotoLi
       showHideAnimationType: 'fade'
     });
 
-    pswp.on('close', () => {
-      onClose();
-    });
-
     pswp.init();
     setPhotoSwipe(pswp);
 
     return () => {
       pswp.destroy();
     };
-  }, [photos, initialIndex, isOpen, onClose]);
+  }, [photos, initialIndex, isOpen]);
 
   return null;
 }

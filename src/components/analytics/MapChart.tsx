@@ -63,7 +63,7 @@ function useMap(containerId: string) {
         tileLayerRef.current = null;
       }
     };
-  }, [containerId]);
+  }, [containerId, theme]); // Added theme to dependencies
 
   // Update tile layer when theme changes
   useEffect(() => {

@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb';
 import { connectToMongoDB } from '@/lib/db';
 import { Photo } from '@/models/photo';
 import { IPhoto } from '@/models/photo';
+import Image from "next/image";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -96,10 +97,13 @@ export default async function PhotoPage({ params }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Photo */}
         <div className="relative">
-          <img
+          <Image
             src={photo.imageUrl}
-            alt={photo.title}
-            className="w-full rounded-lg shadow-lg"
+            alt={photo.title || "Photo"}
+            width={800}
+            height={600}
+            className="rounded-lg shadow-lg max-w-full h-auto"
+            priority
           />
         </div>
         
@@ -203,10 +207,12 @@ export default async function PhotoPage({ params }: Props) {
                 className="block group"
               >
                 <div className="relative aspect-video overflow-hidden rounded-lg">
-                  <img
+                  <Image
                     src={relatedPhoto.imageUrl}
-                    alt={relatedPhoto.title}
-                    className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-200"
+                    alt={relatedPhoto.title || "Photo thumbnail"}
+                    width={200}
+                    height={150}
+                    className="rounded object-cover w-full h-full"
                   />
                 </div>
                 <h3 className="mt-2 font-semibold group-hover:text-blue-600">

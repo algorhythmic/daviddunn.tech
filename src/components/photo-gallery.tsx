@@ -5,6 +5,7 @@ import PhotoAlbum from 'react-photo-album';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/style.css';
 import { Photo } from '@/models/mongodb/Photo';
+import Image from "next/image";
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -61,19 +62,12 @@ export function PhotoGallery({ photos, onPhotoClick }: PhotoGalleryProps) {
         ...style
       }}
     >
-      <img
-        {...rest}
-        alt={alt}
-        style={{
-          ...style,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          transition: 'transform 0.3s ease',
-          '&:hover': {
-            transform: 'scale(1.02)'
-          }
-        }}
+      <Image
+        src={photo.src}
+        alt={photo.alt || "Gallery photo"}
+        width={photo.width || 800}
+        height={photo.height || 600}
+        className="object-cover w-full h-full rounded-lg"
       />
     </div>
   ), []);

@@ -63,7 +63,7 @@ export default function SearchPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">Search Results for "{query}"</h1>
+      <h1 className="text-4xl font-bold mb-8">Search Results for &quot;{query}&quot;</h1>
       
       {loading ? (
         <div className="flex justify-center items-center min-h-[200px]">
@@ -120,7 +120,9 @@ export default function SearchPage() {
           </TabsContent>
         </Tabs>
       ) : (
-        <p className="text-muted-foreground">No results found for "{query}"</p>
+        <p className="text-sm text-muted-foreground">
+          No results found for &quot;{query}&quot;
+        </p>
       )}
     </div>
   )

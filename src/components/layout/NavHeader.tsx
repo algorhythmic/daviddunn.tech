@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { ModeToggle } from '@/components/ui/mode-toggle';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
@@ -16,13 +16,11 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { SocialLinks } from '@/components/layout/SocialLinks';
 import { SearchBar } from '@/components/layout/SearchBar';
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { 
   Home,
   BookOpen,
   Camera,
-  BarChart,
   User,
   AppWindow,
   LineChart,

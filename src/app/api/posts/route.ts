@@ -15,10 +15,14 @@ export async function GET(request: Request) {
 
     await connectToMongoDB();
     
-    let query: any = { published };
+    const query: { [key: string]: any } = { published };
     
-    if (category) {
-      query.category = category;
+    if (searchParams.has('category')) {
+      query.category = searchParams.get('category');
+    }
+    
+    if (searchParams.has('tag')) {
+      query.tags = searchParams.get('tag');
     }
     
     if (search) {

@@ -3,55 +3,31 @@ import { connectToMongoDB } from '@/lib/db';
 import { Photo } from '@/models/photo';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
-import { generatePresignedUploadUrl, generatePresignedGetUrl, deletePhotoFromS3, generateS3Key } from '@/lib/s3';
+import { generatePresignedUploadUrl, deletePhotoFromS3, generateS3Key } from '@/lib/s3';
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const search = searchParams.get('search');
-    const limit = parseInt(searchParams.get('limit') || '12');
-    const page = parseInt(searchParams.get('page') || '1');
-
     await connectToMongoDB();
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get("q");
     
-    let query: any = {};
-    
-    if (category && category !== 'All') {
-      query.category = category;
-    }
-    
-    if (search) {
-      query.$text = { $search: search };
+    if (!query) {
+      const photos = await Photo.find().sort({ createdAt: -1 });
+      return NextResponse.json(photos);
     }
 
-    const totalPhotos = await Photo.countDocuments(query);
-    const totalPages = Math.ceil(totalPhotos / limit);
-    
-    const photos = await Photo.find(query)
-      .sort({ dateTaken: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const photos = await Photo.find({
+      $or: [
+        { title: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+        { tags: { $regex: query, $options: "i" } }
+      ]
+    }).sort({ createdAt: -1 });
 
-    // Generate presigned URLs for each photo
-    const photosWithUrls = await Promise.all(
-      photos.map(async (photo) => {
-        const url = await generatePresignedGetUrl(photo.s3Key);
-        return {
-          ...photo.toObject(),
-          url,
-        };
-      })
-    );
-
-    return NextResponse.json({
-      photos: photosWithUrls,
-      totalPages,
-      currentPage: page,
-    });
+    return NextResponse.json(photos);
   } catch (error) {
-    console.error('Error fetching photos:', error);
-    return NextResponse.json({ error: 'Failed to fetch photos' }, { status: 500 });
+    console.error("Error fetching photos:", error);
+    return NextResponse.json({ error: "Failed to fetch photos" }, { status: 500 });
   }
 }
 

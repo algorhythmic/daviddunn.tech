@@ -12,12 +12,11 @@ const AlertDialogTrigger = AlertDialogPrimitive.Trigger
 
 const AlertDialogPortal = ({
   className,
-  children,
   ...props
 }: AlertDialogPrimitive.AlertDialogPortalProps) => (
   <AlertDialogPrimitive.Portal className={cn(className)} {...props}>
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      {children}
+      
     </div>
   </AlertDialogPrimitive.Portal>
 )
@@ -26,7 +25,7 @@ AlertDialogPortal.displayName = AlertDialogPrimitive.Portal.displayName
 const AlertDialogOverlay = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
->(({ className, children, ...props }, ref) => (
+>(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
       "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm transition-opacity animate-in fade-in",

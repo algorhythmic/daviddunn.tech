@@ -5,8 +5,8 @@ export default function PhotoNotFound() {
     <main className="container mx-auto px-4 py-16">
       <div className="max-w-2xl mx-auto text-center">
         <h1 className="text-4xl font-bold mb-4">Photo Not Found</h1>
-        <p className="text-gray-600 mb-8">
-          The photo you're looking for could not be found. It may have been removed or the URL might be incorrect.
+        <p className="text-lg text-muted-foreground">
+          We couldn&apos;t find the photo you&apos;re looking for.
         </p>
         <Link
           href="/photos"
