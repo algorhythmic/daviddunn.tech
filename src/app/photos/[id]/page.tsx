@@ -60,8 +60,8 @@ async function getPhoto(id: string) {
         lens: photo.metadata?.lens,
         settings: photo.metadata?.settings
       },
-      dateCreated: new Date(photo.dateCreated),
-      dateUpdated: new Date(photo.dateUpdated)
+      dateCreated: photo.dateCreated,
+      dateUpdated: photo.dateUpdated
     };
 
     return convertedPhoto;
