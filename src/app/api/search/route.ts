@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const photoResults = testPhotos.filter(photo => 
     photo.title.toLowerCase().includes(query) ||
     photo.description.toLowerCase().includes(query) ||
-    photo.category.toLowerCase().includes(query) ||
+    (photo.category?.toLowerCase().includes(query) || false) ||
     photo.tags.some(tag => tag.toLowerCase().includes(query))
   ).map(photo => ({
     type: 'photo' as const,

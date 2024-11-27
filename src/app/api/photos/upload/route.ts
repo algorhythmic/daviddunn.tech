@@ -5,6 +5,7 @@ import { connectToMongoDB } from '@/lib/db';
 import Photo from '@/models/mongodb/Photo';
 import { generateS3Key } from '@/lib/s3';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import sharp from 'sharp';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -50,55 +51,55 @@ export async function POST(request: NextRequest) {
     await connectToMongoDB();
 
     // Process each photo
-    const uploadPromises = photos.map(async (file) => {
-      try {
-        // Generate a unique S3 key
-        const s3Key = generateS3Key(file.name);
+    const photoMetadataPromises = photos.map(async (file) => {
+      const buffer = await file.arrayBuffer();
+      const metadata = await sharp(Buffer.from(buffer)).metadata();
 
-        // Upload directly to S3
-        const command = new PutObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: s3Key,
-          Body: Buffer.from(await file.arrayBuffer()),
-          ContentType: file.type,
-          CacheControl: 'max-age=31536000', // Cache for 1 year
-        });
+      const s3Key = generateS3Key(file.name);
+      const uploadParams = {
+        Bucket: BUCKET_NAME,
+        Key: s3Key,
+        Body: Buffer.from(buffer),
+        ContentType: file.type,
+        CacheControl: 'max-age=31536000', // Cache for 1 year
+      };
 
-        await s3Client.send(command);
+      // Upload to S3
+      await s3Client.send(new PutObjectCommand(uploadParams));
 
-        // Ensure the CloudFront URL doesn't have a trailing slash
-        const baseUrl = CLOUDFRONT_URL!.replace(/\/$/, '');
-        // Ensure the key doesn't start with a slash
-        const cleanKey = s3Key.replace(/^\//, '');
-        const publicUrl = `${baseUrl}/${cleanKey}`;
+      // Ensure the CloudFront URL doesn't have a trailing slash
+      const baseUrl = CLOUDFRONT_URL!.replace(/\/$/, '');
+      // Ensure the key doesn't start with a slash
+      const cleanKey = s3Key.replace(/^\//, '');
+      const publicUrl = `${baseUrl}/${cleanKey}`;
 
-        // Create photo document
-        const photo = new Photo({
-          title: title || file.name.replace(/\.[^/.]+$/, ""),
-          description: description || "",
-          location: location || "",
-          s3Key,
-          url: publicUrl,
-          size: file.size,
-          mimeType: file.type,
-          dateCreated: new Date(),
-          dateUpdated: new Date(),
-          tags: tags ? tags.split(',').map(tag => tag.trim()) : []
-        });
+      // Create photo document
+      const photo = new Photo({
+        title: title || file.name.replace(/\.[^/.]+$/, ""),
+        description: description || "",
+        location: location || "",
+        s3Key,
+        url: publicUrl,
+        size: file.size,
+        mimeType: file.type,
+        dateCreated: new Date(),
+        dateUpdated: new Date(),
+        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+        metadata: {
+          width: metadata.width,
+          height: metadata.height,
+        },
+      });
 
-        await photo.save();
+      await photo.save();
 
-        return {
-          photoId: photo._id,
-          url: publicUrl
-        };
-      } catch (error) {
-        console.error('Error processing photo:', error);
-        throw error;
-      }
+      return {
+        photoId: photo._id,
+        url: publicUrl
+      };
     });
 
-    const results = await Promise.all(uploadPromises);
+    const results = await Promise.all(photoMetadataPromises);
 
     return NextResponse.json({
       message: 'Photos uploaded successfully',
