@@ -81,10 +81,17 @@ export async function POST(request: Request) {
     // Extract EXIF data if available
     const camera: CameraMetadata = {};
     if (metadata.exif) {
-      const exif = await sharp(buffer).metadata();
-      if (exif.make) camera.make = exif.make;
-      if (exif.model) camera.model = exif.model;
-      // Add more EXIF data as needed
+      try {
+        const imageMetadata = await sharp(buffer).metadata();
+        if (imageMetadata.exif) {
+          const exifTags = imageMetadata.exif.toString('binary');
+          if (exifTags.includes('Make')) camera.make = exifTags.match(/Make=(.*?)\0/)?.[1];
+          if (exifTags.includes('Model')) camera.model = exifTags.match(/Model=(.*?)\0/)?.[1];
+          // Add more EXIF data as needed
+        }
+      } catch (error) {
+        console.error('Error parsing EXIF data:', error);
+      }
     }
 
     return NextResponse.json({

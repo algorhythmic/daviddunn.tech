@@ -24,11 +24,17 @@ export async function GET(request: Request) {
     const query: PostQuery = { published };
     
     if (searchParams.has('category')) {
-      query.category = searchParams.get('category');
+      const category = searchParams.get('category');
+      if (category) {
+        query.category = category;
+      }
     }
     
     if (searchParams.has('tag')) {
-      query.tags = searchParams.get('tag');
+      const tag = searchParams.get('tag');
+      if (tag) {
+        query.tags = tag;
+      }
     }
     
     if (search) {

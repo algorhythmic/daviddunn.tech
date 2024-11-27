@@ -6,19 +6,16 @@ import Image from 'next/image';
 import { testPosts } from '@/data/testData';
 import { streamlitApps } from '@/data/streamlit-apps';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import PhotoModal from '@/components/PhotoModal';
+import { AnalyticsPreview } from '@/components/analytics/AnalyticsPreview';
+import { Photo } from '@/types/schema';
 import { CalendarDays, ArrowRight, Camera } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { AnalyticsPreview } from '@/components/analytics/AnalyticsPreview';
-import PhotoModal from '@/components/PhotoModal';
 
-interface Photo {
-  _id: string;
-  title: string;
-  description: string;
-  url: string;
-  location?: string;
-  dateCreated: string;
-  tags: string[];
+interface PhotoResponse {
+  photos: Photo[];
+  totalPhotos: number;
 }
 
 export default function Home() {
@@ -218,15 +215,7 @@ export default function Home() {
       {/* Photo Modal */}
       {selectedPhoto && (
         <PhotoModal
-          photo={{
-            _id: selectedPhoto._id,
-            title: selectedPhoto.title,
-            description: selectedPhoto.description,
-            url: selectedPhoto.url,
-            location: selectedPhoto.location,
-            dateCreated: selectedPhoto.dateCreated,
-            tags: selectedPhoto.tags,
-          }}
+          photo={selectedPhoto}
           onClose={() => setSelectedPhoto(null)}
         />
       )}

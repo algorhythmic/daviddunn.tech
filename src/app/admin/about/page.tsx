@@ -1,17 +1,36 @@
 import { Metadata } from 'next';
 import { AboutContentForm } from '@/components/admin/AboutContentForm';
 import { connectToMongoDB } from '@/lib/db';
-import { AboutContent } from '@/models/about';
+import { AboutContent, IAboutContent } from '@/models/about';
+import { Types } from 'mongoose';
 
 export const metadata: Metadata = {
   title: 'Admin - About Page Content',
   description: 'Manage About page content and uploads',
 };
 
+type LeanAboutContent = {
+  _id: Types.ObjectId;
+  statement?: string;
+  resumeUrl?: string;
+  previewImages?: {
+    resume?: string;
+    linkedin?: string;
+    github?: string;
+    instagram?: string;
+  };
+  socialLinks?: {
+    linkedin?: string;
+    github?: string;
+    instagram?: string;
+  };
+  lastUpdated?: Date;
+};
+
 async function getAboutContent() {
   try {
     await connectToMongoDB();
-    const content = await AboutContent.findOne().lean();
+    const content = await AboutContent.findOne().lean() as LeanAboutContent;
     
     if (!content) {
       return null;

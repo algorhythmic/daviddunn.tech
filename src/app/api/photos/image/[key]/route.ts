@@ -12,15 +12,15 @@ const s3Client = new S3Client({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { key: string } }
-) {
+): Promise<NextResponse> {
   try {
-    const key = decodeURIComponent(params.key);
+    const { key } = request.nextUrl.pathname.match(/\/image\/(?<key>[^/]+)/)?.groups ?? {};
+    const decodedKey = decodeURIComponent(key);
     
     // Generate a signed URL for the image
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME,
-      Key: key,
+      Key: decodedKey,
     });
 
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });

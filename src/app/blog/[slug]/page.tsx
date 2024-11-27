@@ -4,13 +4,15 @@ import { testPosts } from '@/data/testData';
 import MarkdownRenderer from '@/components/blog/MarkdownRenderer';
 
 interface Props {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = testPosts.find((post) => post.slug === params.slug);
+  const resolvedParams = await params;
+  const post = testPosts.find((post) => post.slug === resolvedParams.slug);
   if (!post) return {};
 
   return {
@@ -19,8 +21,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function BlogPostPage({ params }: Props) {
-  const post = testPosts.find((post) => post.slug === params.slug);
+export default async function BlogPostPage({ params }: Props) {
+  const resolvedParams = await params;
+  const post = testPosts.find((post) => post.slug === resolvedParams.slug);
   if (!post) notFound();
 
   return (
@@ -30,14 +33,11 @@ export default function BlogPostPage({ params }: Props) {
         <header className="mb-8">
           <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
           <div className="flex flex-wrap gap-2 mb-4">
-            {post.categories.map((category) => (
-              <span
-                key={category}
-                className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
-              >
-                {category}
-              </span>
-            ))}
+            <span
+              className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
+            >
+              {post.category}
+            </span>
           </div>
           <div className="text-muted-foreground">
             <time dateTime={post.publishedAt.toISOString()}>

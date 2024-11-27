@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import PhotoAlbum from 'react-photo-album';
 import { Photo } from '@/models/mongodb/Photo';
+import Image from 'next/image';
 
 interface PhotoGridProps {
   photos: Photo[];
@@ -15,16 +16,12 @@ export function PhotoGrid({ photos, onPhotoClick }: PhotoGridProps) {
       className="group relative overflow-hidden rounded-md transition-transform hover:scale-[1.02]"
       style={style}
     >
-      {/* Use regular img tag instead of Next.js Image */}
-      <img
+      <Image
         src={photo.src}
         alt={photo.alt || 'Gallery photo'}
-        style={{
-          ...style,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-        }}
+        fill
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        style={{ objectFit: 'cover' }}
         className="rounded transition-transform duration-200 hover:scale-105"
       />
       {photo.title && (

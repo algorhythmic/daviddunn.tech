@@ -3,8 +3,9 @@
 import { useEffect } from 'react';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import 'photoswipe/style.css';
+import { Photo as SchemaPhoto } from '@/types/schema';
 
-interface Photo {
+interface PhotoModalPhoto {
   src?: string;
   url?: string;
   width?: number;
@@ -14,8 +15,8 @@ interface Photo {
 }
 
 interface PhotoModalProps {
-  photo?: Photo;
-  photos?: Photo[];
+  photo?: SchemaPhoto;
+  photos?: SchemaPhoto[];
   index?: number;
   onClose?: () => void;
   isOpen?: boolean;
@@ -25,8 +26,16 @@ export default function PhotoModal({ photo, photos, index = 0, onClose, isOpen =
   useEffect(() => {
     if (!isOpen) return;
     
+    // Convert schema photos to PhotoSwipe format
+    const convertToPhotoSwipe = (p: SchemaPhoto): PhotoModalPhoto => ({
+      src: p.url,
+      url: p.url,
+      title: p.title,
+      description: p.description,
+    });
+    
     // Convert single photo to array if needed
-    const photoArray = photo ? [photo] : photos || [];
+    const photoArray = photo ? [convertToPhotoSwipe(photo)] : photos?.map(convertToPhotoSwipe) || [];
     
     const lightbox = new PhotoSwipeLightbox({
       dataSource: photoArray.map(p => ({

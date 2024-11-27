@@ -7,9 +7,8 @@ import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const id = params.id;
+): Promise<NextResponse> {
+  const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
   
   try {
     if (!ObjectId.isValid(id)) {
@@ -53,9 +52,8 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const id = params.id;
+): Promise<NextResponse> {
+  const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
   const warnings: string[] = [];
   
   try {
@@ -124,9 +122,8 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const id = params.id;
+): Promise<NextResponse> {
+  const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
   
   try {
     // Check authentication

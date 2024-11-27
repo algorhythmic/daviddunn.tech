@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         runValidators: false, // Disable validation since we're handling it manually
         lean: true
       }
-    );
+    ) as any;  // Temporarily type as any to handle the _id conversion
 
     if (!content) {
       console.error('No content returned after update');
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     // Convert _id to string and create a plain object
     const serializedContent = {
       ...content,
-      _id: content._id.toString(),
+      _id: content._id?.toString() || '',  // Safely access and convert _id
       lastUpdated: content.lastUpdated.toISOString()
     };
 
@@ -69,13 +69,16 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Error updating about content:', error);
+    
+    // Type guard for Error object
+    const err = error as Error;
     console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
+      name: err.name,
+      message: err.message,
+      stack: err.stack
     });
     return NextResponse.json(
-      { error: 'Failed to update about content', details: error.message },
+      { error: 'Failed to update about content', details: err.message },
       { status: 500 }
     );
   }
@@ -84,7 +87,7 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     await connectToMongoDB();
-    const content = await AboutContent.findOne().lean();
+    const content = await AboutContent.findOne().lean() as any;
 
     if (!content) {
       return NextResponse.json({}, {
@@ -99,7 +102,7 @@ export async function GET() {
     // Convert _id to string and create a plain object
     const serializedContent = {
       ...content,
-      _id: content._id.toString(),
+      _id: content._id?.toString() || '',  // Safely access and convert _id
       lastUpdated: content.lastUpdated.toISOString()
     };
 
@@ -112,13 +115,16 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching about content:', error);
+    
+    // Type guard for Error object
+    const err = error as Error;
     console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
+      name: err.name,
+      message: err.message,
+      stack: err.stack
     });
     return NextResponse.json(
-      { error: 'Failed to fetch about content', details: error.message },
+      { error: 'Failed to fetch about content', details: err.message },
       { status: 500 }
     );
   }

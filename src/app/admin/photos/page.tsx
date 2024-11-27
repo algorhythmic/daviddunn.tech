@@ -49,7 +49,7 @@ export default function PhotosPage() {
         console.error('Error fetching photos:', error);
         toast({
           title: 'Error',
-          description: error instanceof Error ? error.message : 'Failed to load photos',
+          description: error instanceof Error ? error.message : 'Failed to fetch photos',
           variant: 'destructive',
         });
       }
@@ -100,6 +100,7 @@ export default function PhotosPage() {
       toast({
         title: 'Success',
         description: `Successfully uploaded ${files.length} photos`,
+        variant: 'default',
       });
 
       // Close dialog and refresh photos
@@ -157,7 +158,7 @@ export default function PhotosPage() {
       toast({
         title: 'Success',
         description: data.message,
-        status: 'success',
+        variant: 'default',
       });
 
       // Show any warnings if present
@@ -166,8 +167,7 @@ export default function PhotosPage() {
           toast({
             title: 'Warning',
             description: warning,
-            status: 'warning',
-            duration: 5000,
+            variant: 'default',
           });
         });
       }
@@ -176,7 +176,7 @@ export default function PhotosPage() {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to delete photo',
-        status: 'error',
+        variant: 'destructive',
       });
     }
   };
@@ -266,7 +266,7 @@ export default function PhotosPage() {
           <DialogHeader>
             <DialogTitle>Upload Photos</DialogTitle>
             <DialogDescription>
-              Click &ldquo;Upload Photos&rdquo; to add new photos to your gallery
+              Click &ldquo;Add Photos&rdquo; to upload new photos to your gallery.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
@@ -314,25 +314,27 @@ export default function PhotosPage() {
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="photos">Photos</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="photos" className="text-right">
+                Photos
+              </Label>
               <Input
                 id="photos"
                 type="file"
-                multiple
                 accept="image/*"
+                multiple
                 onChange={handleUpload}
                 disabled={isUploading}
               />
+              <Button type="submit" disabled={isUploading}>
+                {isUploading ? 'Uploading...' : 'Add Photos'}
+              </Button>
             </div>
           </div>
 
           <div className="flex justify-end gap-4">
             <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
               Cancel
-            </Button>
-            <Button disabled={isUploading}>
-              {isUploading ? 'Uploading...' : 'Upload'}
             </Button>
           </div>
         </DialogContent>
@@ -344,7 +346,7 @@ export default function PhotosPage() {
           <DialogHeader>
             <DialogTitle>Delete Photo</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this photo?
+              Are you sure you want to delete &ldquo;{photoToDelete?.title}&rdquo;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -352,7 +354,7 @@ export default function PhotosPage() {
               This will permanently delete:
             </p>
             <ul className="list-disc list-inside text-sm text-muted-foreground">
-              <li>The photo "{photoToDelete?.title}"</li>
+              <li>The photo &ldquo;{photoToDelete?.title}&rdquo;</li>
               <li>The photo file from storage</li>
             </ul>
             <p className="text-sm text-muted-foreground font-semibold">

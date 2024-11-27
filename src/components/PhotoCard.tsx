@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Camera, MapPin, Calendar } from 'lucide-react';
 import { Photo } from "@/models/mongodb/Photo";
+import Image from 'next/image';
 import PhotoModal from './PhotoModal';
 import {
   Card,
@@ -30,31 +31,42 @@ interface PhotoCardProps {
 export default function PhotoCard({ photo }: PhotoCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
-
-  if (!photo?.url && !photo?.s3Key) {
-    console.error('Photo has no URL or s3Key:', photo);
-    return null;
-  }
-
-  const cloudFrontUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
-  if (!cloudFrontUrl) {
-    console.error('NEXT_PUBLIC_CLOUDFRONT_URL is not defined');
-    return null;
-  }
-
-  const imageUrl = photo.url || (photo.s3Key && `${cloudFrontUrl}/${photo.s3Key}`);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!imageUrl) return;
-    const img = new Image();
-    img.src = imageUrl;
-    img.onload = () => {
-      setImageDimensions({
-        width: img.naturalWidth,
-        height: img.naturalHeight
-      });
-    };
-  }, [imageUrl]);
+    // Validate photo and environment variables
+    if (!photo?.url && !photo?.s3Key) {
+      console.error('Photo has no URL or s3Key:', photo);
+      return;
+    }
+
+    const cloudFrontUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+    if (!cloudFrontUrl) {
+      console.error('NEXT_PUBLIC_CLOUDFRONT_URL is not defined');
+      return;
+    }
+
+    // Set the image URL
+    const url = photo.url || (photo.s3Key && `${cloudFrontUrl}/${photo.s3Key}`);
+    setImageUrl(url);
+
+    // Load image dimensions
+    if (url) {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        setImageDimensions({
+          width: img.naturalWidth,
+          height: img.naturalHeight
+        });
+      };
+    }
+  }, [photo]);
+
+  // Return null if we don't have a valid image URL
+  if (!imageUrl) {
+    return null;
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -73,11 +85,13 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
               className="relative cursor-pointer"
               onClick={() => setIsModalOpen(true)}
             >
-              <div className="aspect-[4/3] w-full overflow-hidden">
-                <img
+              <div className="aspect-[4/3] w-full overflow-hidden relative">
+                <Image
                   src={imageUrl}
                   alt={photo.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                 />
               </div>

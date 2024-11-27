@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     post.title.toLowerCase().includes(query) ||
     post.excerpt.toLowerCase().includes(query) ||
     post.content.toLowerCase().includes(query) ||
-    post.categories.some(category => category.toLowerCase().includes(query)) ||
+    post.category.toLowerCase().includes(query) ||
     post.tags.some(tag => tag.toLowerCase().includes(query))
   ).map(post => ({
     type: 'blog' as const,

@@ -7,8 +7,10 @@ import { ObjectId } from 'mongodb';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
+  const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
+  const warnings: string[] = [];
+  
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
@@ -16,7 +18,7 @@ export async function DELETE(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    if (!ObjectId.isValid(params.id)) {
+    if (!ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'Invalid photo ID' },
         { status: 400 }
@@ -27,7 +29,7 @@ export async function DELETE(
     const photos = db.collection('photos');
 
     // Find the photo first to get the S3 key
-    const photo = await photos.findOne({ _id: new ObjectId(params.id) });
+    const photo = await photos.findOne({ _id: new ObjectId(id) });
     if (!photo) {
       return NextResponse.json(
         { error: 'Photo not found' },
@@ -35,19 +37,20 @@ export async function DELETE(
       );
     }
 
-    // Delete from S3
-    try {
-      await deletePhotoFromS3(photo.s3Key);
-    } catch (error) {
-      console.error('Error deleting photo from S3:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete photo from storage' },
-        { status: 500 }
-      );
+    // Try to delete from S3 if key exists
+    if (photo.s3Key) {
+      try {
+        await deletePhotoFromS3(photo.s3Key);
+      } catch (error) {
+        console.error('Error deleting photo from S3:', error);
+        warnings.push('Failed to delete photo from S3 storage, but metadata was removed');
+      }
+    } else {
+      warnings.push('No S3 key found for photo, only removing metadata');
     }
 
     // Delete from MongoDB
-    const result = await photos.deleteOne({ _id: new ObjectId(params.id) });
+    const result = await photos.deleteOne({ _id: new ObjectId(id) });
     if (result.deletedCount === 0) {
       return NextResponse.json(
         { error: 'Failed to delete photo from database' },
@@ -57,12 +60,16 @@ export async function DELETE(
 
     return NextResponse.json({
       message: 'Photo deleted successfully',
-      photoId: params.id
+      photoId: id,
+      warnings: warnings.length > 0 ? warnings : undefined
     });
   } catch (error) {
     console.error('Error deleting photo:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete photo' },
+      { 
+        error: error instanceof Error ? error.message : 'Failed to delete photo',
+        warnings
+      },
       { status: 500 }
     );
   }
