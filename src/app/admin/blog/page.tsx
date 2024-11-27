@@ -26,7 +26,7 @@ export default function BlogAdmin() {
 
       <div className="grid gap-4">
         {testPosts.map((post) => (
-          <Card key={post._id}>
+          <Card key={post._id.toString()}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <Link href={`/admin/blog/${post._id}`}>

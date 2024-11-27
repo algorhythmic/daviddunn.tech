@@ -135,7 +135,7 @@ export default function Home() {
               <div className="space-y-2">
                 {latestPosts.map(post => (
                   <Link 
-                    key={post._id} 
+                    key={post._id.toString()} 
                     href={`/blog/${post.slug}`}
                     className="block group"
                   >
@@ -179,7 +179,7 @@ export default function Home() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {photos.map((photo) => (
                 <button
-                  key={photo._id}
+                  key={photo._id.toString()}
                   onClick={() => setSelectedPhoto(photo)}
                   className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer"
                 >

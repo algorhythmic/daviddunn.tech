@@ -6,7 +6,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+} from '@radix-ui/react-collapsible';
 import { Button } from '@/components/ui/button'
 import { ChevronRight } from 'lucide-react'
 

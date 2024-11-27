@@ -121,7 +121,7 @@ export default function AdminDashboard() {
         <h2 className="text-xl font-semibold mb-4">Recent Posts</h2>
         <div className="space-y-4">
           {recentPosts.map((post) => (
-            <Card key={post._id}>
+            <Card key={post._id.toString()}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <Link href={`/admin/blog/${post._id}`}>

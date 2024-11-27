@@ -29,7 +29,7 @@ export default function BlogPage() {
             .filter(post => post.status === 'published')
             .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
             .map((post) => (
-              <BlogCard key={post._id} post={post} />
+              <BlogCard key={post._id.toString()} post={post} />
             ))}
         </div>
       </div>
