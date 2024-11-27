@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import PhotoCard from './PhotoCard';
-import { Photo } from '@/types/schema';
+import { IPhoto } from '@/types/schema';
 import { Input } from './ui/input';
 import {
   Select,
@@ -13,12 +13,12 @@ import {
 } from './ui/select';
 
 interface PhotoGalleryProps {
-  initialPhotos: Photo[];
+  initialPhotos: IPhoto[];
   categories: string[];
 }
 
 export default function PhotoGallery({ initialPhotos, categories }: PhotoGalleryProps) {
-  const [photos, setPhotos] = useState<Photo[]>(initialPhotos);
+  const [photos, setPhotos] = useState<IPhoto[]>(initialPhotos);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -61,7 +61,7 @@ export default function PhotoGallery({ initialPhotos, categories }: PhotoGallery
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {photos.map((photo) => (
-          <PhotoCard key={photo._id} photo={photo} />
+          <PhotoCard key={photo._id.toString()} photo={photo} />
         ))}
       </div>
     </div>

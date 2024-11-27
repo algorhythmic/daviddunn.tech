@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Camera, MapPin, Calendar } from 'lucide-react';
-import { IPhoto } from '@/models/photo';
+import { IPhoto } from '@/types/schema';
 import Image from 'next/image';
 import PhotoModal from './PhotoModal';
 import {
@@ -51,8 +51,8 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
     setImageUrl(url);
 
     // Set image dimensions
-    const width = photo.width ?? photo.metadata?.width ?? 1920;
-    const height = photo.height ?? photo.metadata?.height ?? 1080;
+    const width = photo.width ?? 1920;
+    const height = photo.height ?? 1080;
     setImageDimensions({ width, height });
   }, [photo]);
 
@@ -97,10 +97,10 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
             <div className="space-y-2">
               <h4 className="text-sm font-semibold">{photo.title}</h4>
               <p className="text-sm text-muted-foreground">{photo.description}</p>
-              {photo.metadata?.camera && (
+              {photo.camera && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Camera className="h-4 w-4" />
-                  <span>{photo.metadata.camera}</span>
+                  <span>{String(photo.camera)}</span>
                 </div>
               )}
             </div>
@@ -142,6 +142,20 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
                 <p>Date taken: {formatDate(photo.dateTaken)}</p>
               </TooltipContent>
             </Tooltip>
+
+            {photo.camera && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Camera className="h-4 w-4" />
+                    <span className="truncate">{String(photo.camera)}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Camera: {String(photo.camera)}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </TooltipProvider>
         </CardFooter>
       </Card>
@@ -149,30 +163,27 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
       {isModalOpen && imageDimensions && (
         <PhotoModal 
           photo={{
-            _id: photo._id.toString(),
+            _id: photo._id?.toString(),
             title: photo.title,
             description: photo.description,
             url: imageUrl,
             s3Key: photo.s3Key,
+            thumbnailUrl: imageUrl,
+            category: photo.category,
+            camera: photo.camera,
+            lens: photo.lens,
             tags: photo.tags,
             location: photo.location,
-            dateCreated: photo.dateUploaded,
-            dateUpdated: photo.dateUploaded,
-            metadata: {
-              width: imageDimensions.width,
-              height: imageDimensions.height,
-              camera: photo.metadata?.camera ? {
-                make: photo.metadata.camera,
-                model: undefined
-              } : undefined,
-              lens: photo.metadata?.lens,
-              settings: photo.metadata?.settings,
-              location: photo.location ? {
-                name: photo.location,
-                latitude: undefined,
-                longitude: undefined
-              } : undefined
-            }
+            dateTaken: photo.dateTaken,
+            dateUploaded: photo.dateUploaded,
+            width: imageDimensions.width,
+            height: imageDimensions.height,
+            aperture: photo.aperture,
+            shutterSpeed: photo.shutterSpeed,
+            iso: photo.iso,
+            focalLength: photo.focalLength,
+            latitude: photo.latitude,
+            longitude: photo.longitude
           }}
           onClose={() => setIsModalOpen(false)}
           isOpen={isModalOpen}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { IPhoto } from '@/models/photo';
+import { IPhoto } from '@/types/schema';
 import { PhotoGrid } from './photo-grid';
 import { PhotoLightbox } from './photo-lightbox';
 

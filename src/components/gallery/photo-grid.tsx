@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import PhotoAlbum, { RenderPhotoProps, RenderPhotoContext } from 'react-photo-album';
-import { IPhoto } from '@/models/photo';
+import { IPhoto } from '@/types/schema';
 import Image from 'next/image';
 
 interface PhotoGridProps {
@@ -18,8 +18,8 @@ export function PhotoGrid({ photos, onPhotoClick }: PhotoGridProps) {
       .filter((photo): photo is IPhoto => photo !== null)
       .map(photo => ({
         src: photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`,
-        width: photo.width ?? photo.metadata?.width ?? 1920,
-        height: photo.height ?? photo.metadata?.height ?? 1080,
+        width: photo.width ?? 1920,
+        height: photo.height ?? 1080,
         alt: photo.title,
         title: photo.title,
         key: photo._id.toString(),

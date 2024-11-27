@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import 'photoswipe/style.css';
-import { IPhoto } from '@/models/photo';
+import { IPhoto } from '@/types/schema';
 import PhotoSwipe from 'photoswipe';
 
 interface PhotoLightboxProps {
@@ -56,8 +56,8 @@ export function PhotoLightbox({ photos, initialIndex, isOpen, onClose }: PhotoLi
     const pswp = new PhotoSwipe({
       dataSource: photos.map(photo => ({
         src: photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`,
-        width: photo.width ?? photo.metadata?.width ?? 1920,
-        height: photo.height ?? photo.metadata?.height ?? 1080,
+        width: photo.width ?? 1920,
+        height: photo.height ?? 1080,
         alt: photo.title
       })),
       index: currentIndex,

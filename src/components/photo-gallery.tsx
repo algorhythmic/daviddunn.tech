@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/style.css';
-import { IPhoto } from '@/models/photo';
+import { IPhoto } from '@/types/schema';
 import PhotoAlbum from 'react-photo-album';
 import type { Photo } from 'react-photo-album';
 
@@ -28,8 +28,8 @@ export function PhotoGallery({ photos, onPhotoClick }: PhotoGalleryProps) {
     const pswp = new PhotoSwipe({
       dataSource: photos.map(photo => ({
         src: `${process.env.NEXT_PUBLIC_S3_URL}/${photo.s3Key}`,
-        width: photo.width ?? photo.metadata?.width ?? 1920,
-        height: photo.height ?? photo.metadata?.height ?? 1080,
+        width: photo.width ?? 1920,
+        height: photo.height ?? 1080,
         alt: photo.title || 'Photo'
       })),
       index,
@@ -56,8 +56,8 @@ export function PhotoGallery({ photos, onPhotoClick }: PhotoGalleryProps) {
 
   const processedPhotos: Photo[] = photos.map(photo => ({
     src: photo.url || `${process.env.NEXT_PUBLIC_S3_URL}/${photo.s3Key}`,
-    width: photo.width ?? photo.metadata?.width ?? 1920,
-    height: photo.height ?? photo.metadata?.height ?? 1080,
+    width: photo.width ?? 1920,
+    height: photo.height ?? 1080,
     alt: photo.title || '',
     key: photo._id.toString()
   }));
