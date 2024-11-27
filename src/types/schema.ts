@@ -1,6 +1,8 @@
+import { ObjectId } from 'mongodb';
+
 // MongoDB Schemas
 export interface BlogPost {
-  _id: string;
+  _id: string | ObjectId;
   title: string;
   slug: string;
   content: string;
@@ -27,39 +29,38 @@ export interface TableOfContentsItem {
   items?: TableOfContentsItem[];
 }
 
+export interface PhotoMetadata {
+  width?: number;
+  height?: number;
+  dateTaken?: Date;
+  camera?: string;
+  lens?: string;
+  location?: string;
+  settings?: {
+    aperture?: string;
+    shutterSpeed?: string;
+    iso?: number;
+    focalLength?: string;
+  };
+}
+
 export interface Photo {
-  _id: string;
+  _id: string | ObjectId;
   title: string;
   description: string;
   url: string;
   thumbnailUrl?: string;
-  category: string;
+  category?: string;
   albumId?: string;
   tags: string[];
-  metadata: {
-    dateTaken: Date;
-    camera?: string;
-    lens?: string;
-    location?: {
-      name: string;
-      coordinates?: {
-        latitude: number;
-        longitude: number;
-      };
-    };
-    settings?: {
-      aperture?: string;
-      shutterSpeed?: string;
-      iso?: number;
-      focalLength?: string;
-    };
-  };
+  location?: string;
   dateCreated: Date;
   dateUpdated: Date;
+  metadata?: PhotoMetadata;
 }
 
 export interface Album {
-  _id: string;
+  _id: string | ObjectId;
   title: string;
   description: string;
   coverPhotoUrl: string;
