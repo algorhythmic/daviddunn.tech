@@ -6,6 +6,8 @@ interface PhotoMetadataSettings {
   shutterSpeed?: string;
   iso?: number;
   focalLength?: string;
+  width?: number;
+  height?: number;
 }
 
 interface PhotoMetadata {
@@ -53,7 +55,9 @@ const photoSchema = new Schema<IPhoto>({
       aperture: { type: String },
       shutterSpeed: { type: String },
       iso: { type: Number },
-      focalLength: { type: String }
+      focalLength: { type: String },
+      width: { type: Number },
+      height: { type: Number }
     }
   }
 }, {
