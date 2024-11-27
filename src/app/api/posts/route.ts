@@ -4,6 +4,13 @@ import { Post } from '@/models/post';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
 
+type PostQuery = {
+  published: boolean;
+  category?: string;
+  tags?: string;
+  $text?: { $search: string };
+};
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -14,7 +21,7 @@ export async function GET(request: Request) {
 
     await connectToMongoDB();
     
-    const query: { [key: string]: any } = { published };
+    const query: PostQuery = { published };
     
     if (searchParams.has('category')) {
       query.category = searchParams.get('category');

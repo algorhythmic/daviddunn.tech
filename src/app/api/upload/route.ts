@@ -13,6 +13,18 @@ const s3Client = new S3Client({
   },
 });
 
+type CameraMetadata = {
+  make?: string;
+  model?: string;
+  lens?: string;
+  settings?: {
+    aperture?: string;
+    shutterSpeed?: string;
+    iso?: number;
+    focalLength?: string;
+  };
+};
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -67,7 +79,7 @@ export async function POST(request: Request) {
     }));
 
     // Extract EXIF data if available
-    const camera: any = {};
+    const camera: CameraMetadata = {};
     if (metadata.exif) {
       const exif = await sharp(buffer).metadata();
       if (exif.make) camera.make = exif.make;

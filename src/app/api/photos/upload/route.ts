@@ -44,8 +44,15 @@ export async function POST(request: NextRequest) {
 
     await connectToMongoDB();
 
+    type PhotoUploadFile = {
+      name: string;
+      type: string;
+      size: number;
+      arrayBuffer: () => Promise<ArrayBuffer>;
+    };
+
     // Process each photo
-    const uploadPromises = photos.map(async (file: any) => {
+    const uploadPromises = photos.map(async (file: PhotoUploadFile) => {
       try {
         // Generate a unique S3 key
         const s3Key = generateS3Key(file.name);

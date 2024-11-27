@@ -163,7 +163,25 @@ export async function PATCH(
       );
     }
 
-    const updateFields: any = { dateUpdated: new Date() };
+    type PhotoUpdateFields = {
+      dateUpdated: Date;
+      title?: string;
+      description?: string;
+      tags?: string[];
+      metadata?: {
+        dateTaken?: Date;
+        camera?: string;
+        lens?: string;
+        settings?: {
+          aperture?: string;
+          shutterSpeed?: string;
+          iso?: number;
+          focalLength?: string;
+        };
+      };
+    };
+
+    const updateFields: PhotoUpdateFields = { dateUpdated: new Date() };
     if (updates.title !== undefined) updateFields.title = updates.title;
     if (updates.description !== undefined) updateFields.description = updates.description;
     if (updates.tags !== undefined) updateFields.tags = updates.tags;

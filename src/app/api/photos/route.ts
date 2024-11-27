@@ -21,7 +21,14 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build query based on search parameters
-    const query: any = {};
+    type PhotoQuery = {
+      category?: string;
+      tags?: { $in: string[] };
+      $text?: { $search: string };
+      isPublic?: boolean;
+    };
+
+    const query: PhotoQuery = {};
     const category = searchParams.get('category');
     const tag = searchParams.get('tag');
     const search = searchParams.get('search');
@@ -31,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (tag) {
-      query.tags = tag;
+      query.tags = { $in: [tag] };
     }
 
     if (search) {

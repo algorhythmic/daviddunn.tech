@@ -81,6 +81,16 @@ export interface AppAnalytics {
   id: string;
   app_id: string;
   event_type: 'view' | 'interaction' | 'error';
-  event_data: Record<string, any>;
+  event_data: {
+    page?: string;
+    component?: string;
+    action?: string;
+    value?: string | number;
+    error?: {
+      message: string;
+      stack?: string;
+    };
+    metadata?: Record<string, string | number | boolean>;
+  };
   timestamp: Date;
 }
