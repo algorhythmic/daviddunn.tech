@@ -3,23 +3,25 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connectToMongoDB } from '@/lib/db';
-import Photo from '@/models/mongodb/Photo';
+import Photo, { IPhoto } from '@/models/mongodb/Photo';
 import { ObjectId } from 'mongodb';
 import { ChevronLeft, MapPin, Calendar, Tag } from 'lucide-react';
 import ImageIcon from '@/components/ImageIcon';
+import type { Photo as PhotoType } from '@/types/schema';
 
 interface Props {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 // This is used to generate the static paths
 export async function generateStaticParams() {
   try {
     await connectToMongoDB();
-    const photos = await Photo.find().lean();
+    const rawPhotos = await Photo.find().lean();
+    const photos = (rawPhotos as unknown) as (IPhoto & { _id: ObjectId })[];
     return photos.map((photo) => ({
       id: photo._id.toString(),
     }));
@@ -37,26 +39,32 @@ async function getPhoto(id: string) {
 
     await connectToMongoDB();
     
-    const photo = await Photo.findById(id).lean();
+    const rawPhoto = await Photo.findById(id).lean();
+    const photo = (rawPhoto as unknown) as (IPhoto & { _id: ObjectId }) | null;
     if (!photo) {
       return null;
     }
 
-    // Ensure we have a valid URL
-    const url = photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`;
-
-    return {
-      ...photo,
+    // Convert MongoDB document to our schema type
+    const convertedPhoto: PhotoType = {
       _id: photo._id.toString(),
       title: photo.title || 'Untitled',
       description: photo.description || '',
-      url,
-      s3Key: photo.s3Key,
+      url: photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`,
+      thumbnailUrl: photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`,
+      category: 'uncategorized', // Add a default category
       tags: photo.tags || [],
-      metadata: photo.metadata || {},
+      metadata: {
+        dateTaken: photo.metadata?.dateTaken || photo.dateCreated,
+        camera: photo.metadata?.camera,
+        lens: photo.metadata?.lens,
+        settings: photo.metadata?.settings
+      },
       dateCreated: new Date(photo.dateCreated),
       dateUpdated: new Date(photo.dateUpdated)
     };
+
+    return convertedPhoto;
   } catch (error) {
     console.error('Error fetching photo:', error);
     throw new Error('Failed to fetch photo');
@@ -66,8 +74,8 @@ async function getPhoto(id: string) {
 export async function generateMetadata(
   props: Props,
 ): Promise<Metadata> {
-  const params = await props.params;
-  const photo = await getPhoto(params.id);
+  const resolvedParams = await props.params;
+  const photo = await getPhoto(resolvedParams.id);
 
   if (!photo) {
     return {
@@ -82,15 +90,9 @@ export async function generateMetadata(
   };
 }
 
-export default async function PhotoPage({
-  params: paramsPromise,
-}: {
-  params: {
-    id: string;
-  };
-}) {
-  const params = await paramsPromise;
-  const photo = await getPhoto(params.id);
+export default async function PhotoPage({ params }: Props) {
+  const resolvedParams = await params;
+  const photo = await getPhoto(resolvedParams.id);
 
   if (!photo) {
     notFound();
@@ -172,21 +174,21 @@ export default async function PhotoPage({
                 <strong>Camera:</strong> {photo.metadata.camera.make} {photo.metadata.camera.model}
               </div>
             )}
-            {photo.metadata.camera?.settings && (
+            {photo.metadata.settings && (
               <div className="space-y-2">
                 <strong>Settings:</strong>
                 <ul className="list-disc list-inside pl-4">
-                  {photo.metadata.camera.settings.iso && (
-                    <li>ISO: {photo.metadata.camera.settings.iso}</li>
+                  {photo.metadata.settings.aperture && (
+                    <li>Aperture: {photo.metadata.settings.aperture}</li>
                   )}
-                  {photo.metadata.camera.settings.aperture && (
-                    <li>Aperture: {photo.metadata.camera.settings.aperture}</li>
+                  {photo.metadata.settings.shutterSpeed && (
+                    <li>Shutter Speed: {photo.metadata.settings.shutterSpeed}</li>
                   )}
-                  {photo.metadata.camera.settings.shutterSpeed && (
-                    <li>Shutter Speed: {photo.metadata.camera.settings.shutterSpeed}</li>
+                  {photo.metadata.settings.iso && (
+                    <li>ISO: {photo.metadata.settings.iso}</li>
                   )}
-                  {photo.metadata.camera.settings.focalLength && (
-                    <li>Focal Length: {photo.metadata.camera.settings.focalLength}</li>
+                  {photo.metadata.settings.focalLength && (
+                    <li>Focal Length: {photo.metadata.settings.focalLength}</li>
                   )}
                 </ul>
               </div>
