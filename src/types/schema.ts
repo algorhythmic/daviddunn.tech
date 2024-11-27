@@ -40,6 +40,13 @@ export interface Photo {
     dateTaken: Date;
     camera?: string;
     lens?: string;
+    location?: {
+      name: string;
+      coordinates?: {
+        latitude: number;
+        longitude: number;
+      };
+    };
     settings?: {
       aperture?: string;
       shutterSpeed?: string;
@@ -47,6 +54,8 @@ export interface Photo {
       focalLength?: string;
     };
   };
+  dateCreated: Date;
+  dateUpdated: Date;
 }
 
 export interface Album {

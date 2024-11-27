@@ -8,10 +8,19 @@ interface PhotoMetadataSettings {
   focalLength?: string;
 }
 
+interface PhotoLocation {
+  name: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
 interface PhotoMetadata {
   dateTaken?: Date;
   camera?: string;
   lens?: string;
+  location?: PhotoLocation;
   settings?: PhotoMetadataSettings;
 }
 
@@ -47,6 +56,13 @@ const photoSchema = new Schema<IPhoto>({
     dateTaken: { type: Date },
     camera: { type: String },
     lens: { type: String },
+    location: {
+      name: { type: String },
+      coordinates: {
+        latitude: { type: Number },
+        longitude: { type: Number }
+      }
+    },
     settings: {
       aperture: { type: String },
       shutterSpeed: { type: String },
