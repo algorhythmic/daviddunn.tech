@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { AboutContentForm } from '@/components/admin/AboutContentForm';
 import { connectToMongoDB } from '@/lib/db';
-import { AboutContent, IAboutContent } from '@/models/about';
+import { AboutContent } from '@/models/about';
 import { Types } from 'mongoose';
 
 export const metadata: Metadata = {

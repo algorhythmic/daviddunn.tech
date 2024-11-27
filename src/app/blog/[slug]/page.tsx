@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { testPosts } from '@/data/testData';
 import MarkdownRenderer from '@/components/blog/MarkdownRenderer';
+import { BlogPost } from '@/types/schema';
 
 interface Props {
   params: Promise<{
@@ -10,9 +10,21 @@ interface Props {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
+async function getBlogPost(slug: string) {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/blog/${slug}`, {
+    next: { revalidate: 3600 }, // Revalidate every hour
+  });
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error('Failed to fetch blog post');
+  }
+  const data = await response.json();
+  return data.post as BlogPost;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
-  const post = testPosts.find((post) => post.slug === resolvedParams.slug);
+  const post = await getBlogPost(resolvedParams.slug);
   if (!post) return {};
 
   return {
@@ -23,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const resolvedParams = await params;
-  const post = testPosts.find((post) => post.slug === resolvedParams.slug);
+  const post = await getBlogPost(resolvedParams.slug);
   if (!post) notFound();
 
   return (
@@ -40,8 +52,8 @@ export default async function BlogPostPage({ params }: Props) {
             </span>
           </div>
           <div className="text-muted-foreground">
-            <time dateTime={post.publishedAt.toISOString()}>
-              {post.publishedAt.toLocaleDateString('en-US', {
+            <time dateTime={post.publishedAt.toString()}>
+              {new Date(post.publishedAt).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { testPhotos, testPosts } from '@/data/testData'
+import { connectToMongoDB } from '@/lib/db'
+import Photo from '@/models/mongodb/Photo'
+import BlogPost from '@/models/mongodb/BlogPost'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -9,33 +11,52 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [] })
   }
 
-  // Search through photos
-  const photoResults = testPhotos.filter(photo => 
-    photo.title.toLowerCase().includes(query) ||
-    photo.description.toLowerCase().includes(query) ||
-    (photo.category?.toLowerCase().includes(query) || false) ||
-    photo.tags.some(tag => tag.toLowerCase().includes(query))
-  ).map(photo => ({
-    type: 'photo' as const,
-    item: photo
-  }))
+  try {
+    await connectToMongoDB()
 
-  // Search through blog posts
-  const blogResults = testPosts.filter(post =>
-    post.title.toLowerCase().includes(query) ||
-    post.excerpt.toLowerCase().includes(query) ||
-    post.content.toLowerCase().includes(query) ||
-    post.category.toLowerCase().includes(query) ||
-    post.tags.some(tag => tag.toLowerCase().includes(query))
-  ).map(post => ({
-    type: 'blog' as const,
-    item: post
-  }))
+    // Search through photos
+    const photos = await Photo.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } },
+        { category: { $regex: query, $options: 'i' } },
+        { tags: { $regex: query, $options: 'i' } },
+      ]
+    }).lean()
 
-  const results = [
-    ...photoResults,
-    ...blogResults,
-  ]
+    const photoResults = photos.map(photo => ({
+      type: 'photo' as const,
+      item: photo
+    }))
 
-  return NextResponse.json({ results })
+    // Search through blog posts
+    const posts = await BlogPost.find({
+      status: 'published',
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { excerpt: { $regex: query, $options: 'i' } },
+        { content: { $regex: query, $options: 'i' } },
+        { category: { $regex: query, $options: 'i' } },
+        { tags: { $regex: query, $options: 'i' } },
+      ]
+    }).lean()
+
+    const blogResults = posts.map(post => ({
+      type: 'blog' as const,
+      item: post
+    }))
+
+    const results = [
+      ...photoResults,
+      ...blogResults,
+    ]
+
+    return NextResponse.json({ results })
+  } catch (error) {
+    console.error('Search error:', error)
+    return NextResponse.json(
+      { error: 'Search failed' },
+      { status: 500 }
+    )
+  }
 }

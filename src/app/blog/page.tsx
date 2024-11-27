@@ -1,13 +1,24 @@
 import { Metadata } from 'next';
-import { testPosts } from '@/data/testData';
 import BlogCard from '@/components/BlogCard';
+import { BlogPost } from '@/types/schema';
 
 export const metadata: Metadata = {
   title: 'Blog | David Dunn',
   description: 'Technical articles, tutorials, and insights about web development, TypeScript, and software engineering.',
 };
 
-export default function BlogPage() {
+async function getBlogPosts() {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/blog`, {
+    next: { revalidate: 3600 }, // Revalidate every hour
+  });
+  if (!response.ok) throw new Error('Failed to fetch blog posts');
+  const data = await response.json();
+  return data.posts as BlogPost[];
+}
+
+export default async function BlogPage() {
+  const posts = await getBlogPosts();
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto">
@@ -25,12 +36,9 @@ export default function BlogPage() {
         </p>
 
         <div className="grid gap-8">
-          {testPosts
-            .filter(post => post.status === 'published')
-            .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
-            .map((post) => (
-              <BlogCard key={post._id.toString()} post={post} />
-            ))}
+          {posts.map((post) => (
+            <BlogCard key={post._id.toString()} post={post} />
+          ))}
         </div>
       </div>
     </div>

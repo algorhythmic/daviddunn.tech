@@ -3,62 +3,62 @@
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FileText, Image as ImageIcon, Plus } from 'lucide-react';
-import { testPosts } from '@/data/testData';
-import { LucideIcon } from 'lucide-react';
-
-interface StatItem {
-  title: string;
-  value: string | number;
-  icon: LucideIcon;
-  href: string;
-  action?: {
-    label: string;
-    href: string;
-    icon: LucideIcon;
-  };
-}
+import { FileText, Image as ImageIcon, Plus, Upload } from 'lucide-react';
+import { IPost, IPostWithId } from '@/models/post'; 
+import { useState, useEffect } from 'react';
+import { IPhoto } from '@/types/schema';
 
 export default function AdminDashboard() {
   const { status } = useSession();
+  const [stats, setStats] = useState<{ postCount: number; photoCount: number }>({ postCount: 0, photoCount: 0 });
+  const [recentPosts, setRecentPosts] = useState<(IPost & { _id: string })[]>([]);
+  const [photos, setPhotos] = useState<IPhoto[]>([]);
 
-  const stats: StatItem[] = [
-    {
-      title: 'Total Blog Posts',
-      value: testPosts.length,
-      icon: FileText,
-      href: '/admin/blog',
-      action: {
-        label: 'New Post',
-        href: '/admin/blog/new',
-        icon: Plus,
-      },
-    },
-    {
-      title: 'Published Posts',
-      value: testPosts.filter(post => post.status === 'published').length,
-      icon: FileText,
-      href: '/admin/blog',
-    },
-    {
-      title: 'Draft Posts',
-      value: testPosts.filter(post => post.status === 'draft').length,
-      icon: FileText,
-      href: '/admin/blog?status=draft',
-    },
-    {
-      title: 'Total Photos',
-      value: '0', // We'll update this when we implement photo management
-      icon: ImageIcon,
-      href: '/admin/photos',
-      action: {
-        label: 'Upload Photo',
-        href: '/admin/photos/upload',
-        icon: Plus,
-      },
-    },
-  ];
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        if (!response.ok) throw new Error('Failed to fetch stats');
+        const data = await response.json();
+        setStats(data);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    const fetchRecentPosts = async () => {
+      try {
+        const response = await fetch('/api/posts?limit=5');
+        if (!response.ok) {
+          throw new Error('Failed to fetch recent posts');
+        }
+        const data = await response.json();
+        setRecentPosts(data.posts.map((post: IPostWithId) => ({
+          ...post,
+          _id: post._id.toString(),
+        })));
+      } catch (error) {
+        console.error('Error fetching recent posts:', error);
+      }
+    };
+
+    const fetchPhotos = async () => {
+      try {
+        const response = await fetch('/api/photos');
+        if (!response.ok) {
+          throw new Error('Failed to fetch photos');
+        }
+        const data = await response.json();
+        setPhotos(data.photos);
+      } catch (error) {
+        console.error('Error fetching photos:', error);
+      }
+    };
+
+    fetchStats();
+    fetchRecentPosts();
+    fetchPhotos();
+  }, []);
 
   if (status === 'loading') {
     return (
@@ -73,9 +73,9 @@ export default function AdminDashboard() {
     );
   }
 
-  const recentPosts = testPosts
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-    .slice(0, 5);
+  if (status !== 'authenticated') {
+    return <div>Not authenticated</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -88,30 +88,56 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
+        {[
+          {
+            title: 'Blog Posts',
+            value: stats.postCount,
+            icon: FileText,
+            href: '/admin/blog',
+            color: 'text-blue-500'
+          },
+          {
+            title: 'Photos',
+            value: stats.photoCount,
+            icon: ImageIcon,
+            href: '/admin/photos',
+            color: 'text-green-500'
+          },
+          {
+            title: 'New Post',
+            value: '+',
+            icon: Plus,
+            href: '/admin/blog/new',
+            color: 'text-purple-500'
+          },
+          {
+            title: 'Upload Photos',
+            value: '+',
+            icon: Upload,
+            href: '/admin/photos/upload',
+            color: 'text-orange-500'
+          }
+        ].map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title + index}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {stat.title}
-                </CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="mt-4 flex justify-center">
-                  {stat.action && (
-                    <Link href={stat.action.href}>
-                      <Button size="sm">
-                        <stat.action.icon className="h-4 w-4 mr-2" />
-                        {stat.action.label}
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <Link key={stat.title} href={stat.href}>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {stat.title}
+                  </CardTitle>
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="mt-4 flex justify-center">
+                    {stat.color && (
+                      <span className={stat.color}>{stat.value}</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           );
         })}
       </div>
@@ -130,8 +156,28 @@ export default function AdminDashboard() {
                     </CardTitle>
                   </Link>
                   <span className="text-sm text-muted-foreground">
-                    {post.status}
+                    {post.published ? 'Published' : 'Draft'}
                   </span>
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Photos */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Photos</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {photos.map((photo) => (
+            <Card key={photo._id.toString()}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Link href={`/admin/photos/${photo._id}`}>
+                    <CardTitle className="text-lg hover:text-primary">
+                      {photo.title}
+                    </CardTitle>
+                  </Link>
                 </div>
               </CardHeader>
             </Card>

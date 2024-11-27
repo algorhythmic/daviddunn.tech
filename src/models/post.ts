@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Model, Document } from 'mongoose';
 
 export interface IPost {
   title: string;
@@ -18,7 +18,14 @@ export interface IPost {
   };
 }
 
-const PostSchema = new mongoose.Schema<IPost>({
+export interface IPostDocument extends Document, IPost {}
+
+export interface IPostWithId extends IPost {
+  _id: mongoose.Types.ObjectId;
+  __v?: number;
+}
+
+const PostSchema = new mongoose.Schema<IPostDocument>({
   title: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
   content: { type: String, required: true },
@@ -55,4 +62,42 @@ PostSchema.pre('save', function(next) {
   next();
 });
 
-export const Post = mongoose.models.Post || mongoose.model<IPost>('Post', PostSchema);
+export const PostModel: Model<IPostDocument> = mongoose.models.Post || mongoose.model<IPostDocument>('Post', PostSchema);
+
+export const post = {
+  count: async (options?: { where?: Partial<IPost> }) => {
+    try {
+      const filter = options?.where || {};
+      return await PostModel.countDocuments(filter);
+    } catch (error) {
+      console.error('Error counting posts:', error);
+      return 0;
+    }
+  },
+  find: async (options?: { 
+    where?: Partial<IPost>;
+    sort?: Record<string, 1 | -1>;
+    limit?: number;
+  }) => {
+    try {
+      const filter = options?.where || {};
+      let query = PostModel.find(filter);
+      
+      if (options?.sort) {
+        query = query.sort(options.sort);
+      }
+      
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+      
+      const docs = await query.lean().exec();
+      return docs as unknown as IPostWithId[];
+    } catch (error) {
+      console.error('Error finding posts:', error);
+      return [] as IPostWithId[];
+    }
+  }
+};
+
+export default PostModel;

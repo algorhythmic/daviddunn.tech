@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Photo, BlogPost } from '@/types/schema'
+import { IPhoto, BlogPost } from '@/types/schema'
 import PhotoCard from '@/components/PhotoCard'
 import BlogCard from '@/components/BlogCard'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface SearchResult {
   type: 'photo' | 'blog'
-  item: Photo | BlogPost
+  item: IPhoto | BlogPost
 }
 
 export default function SearchPage() {
@@ -91,7 +91,7 @@ export default function SearchPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {results.map((result) => {
                 if (result.type === 'photo' && 'id' in result.item) {
-                  return <PhotoCard key={`photo-${result.item.id}`} photo={result.item as unknown as Photo} />
+                  return <PhotoCard key={`photo-${result.item.id}`} photo={result.item as unknown as IPhoto} />
                 }
                 if (result.type === 'blog' && 'id' in result.item) {
                   return <BlogCard key={`blog-${result.item.id}`} post={result.item as BlogPost} />
@@ -105,7 +105,7 @@ export default function SearchPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {photoResults.map((result) => (
                 'id' in result.item && 
-                <PhotoCard key={`photo-${result.item.id}`} photo={result.item as unknown as Photo} />
+                <PhotoCard key={`photo-${result.item.id}`} photo={result.item as unknown as IPhoto} />
               ))}
             </div>
           </TabsContent>

@@ -8,14 +8,11 @@ import { ObjectId } from 'mongodb';
 export async function GET(
   request: NextRequest,
 ): Promise<NextResponse> {
-  const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
-  
   try {
+    const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
+    
     if (!ObjectId.isValid(id)) {
-      return NextResponse.json(
-        { error: 'Invalid photo ID' },
-        { status: 400 }
-      );
+      throw new Error('Invalid photo ID');
     }
 
     const db = await connectToMongoDB();
@@ -23,19 +20,17 @@ export async function GET(
 
     const photo = await photos.findOne({ _id: new ObjectId(id) });
     if (!photo) {
-      return NextResponse.json(
-        { error: 'Photo not found' },
-        { status: 404 }
-      );
+      throw new Error('Photo not found');
     }
 
+    // Use ES2023 object property shorthand
     return NextResponse.json({
       photo: {
         _id: photo._id.toString(),
         title: photo.title,
         description: photo.description,
         url: photo.url,
-        tags: photo.tags,
+        tags: photo.tags?.toSorted() ?? [], // ES2023 toSorted() method
         metadata: photo.metadata,
         dateCreated: photo.dateCreated,
         dateUpdated: photo.dateUpdated
@@ -43,9 +38,20 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching photo:', error);
+    
+    // ES2023 error cause property
+    const errorResponse = {
+      message: error instanceof Error ? error.message : 'Failed to fetch photo',
+      cause: error instanceof Error ? error.cause : undefined
+    };
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch photo' },
-      { status: 500 }
+      { error: errorResponse },
+      { 
+        status: error instanceof Error && error.message === 'Photo not found' ? 404 : 
+                error instanceof Error && error.message === 'Invalid photo ID' ? 400 : 
+                500 
+      }
     );
   }
 }

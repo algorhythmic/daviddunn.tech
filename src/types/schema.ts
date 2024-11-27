@@ -29,42 +29,33 @@ export interface TableOfContentsItem {
   items?: TableOfContentsItem[];
 }
 
-export interface PhotoMetadata {
-  width?: number;
-  height?: number;
-  dateTaken?: string;
-  camera?: {
-    make?: string;
-    model?: string;
-  };
-  lens?: string;
-  location?: {
-    name?: string;
-    latitude?: number;
-    longitude?: number;
-  };
-  settings?: {
-    aperture?: string;
-    shutterSpeed?: string;
-    iso?: number;
-    focalLength?: string;
-  };
-}
-
-export interface Photo {
+export interface IPhoto {
   _id: string | ObjectId;
   title: string;
   description: string;
-  url: string;
+  url?: string;
   s3Key: string;
   thumbnailUrl?: string;
-  category?: string;
-  albumId?: string;
+  category: string;
+  camera?: string;
+  lens?: string;
   tags: string[];
   location?: string;
-  dateCreated: Date;
-  dateUpdated: Date;
-  metadata?: PhotoMetadata;
+  dateTaken: Date;
+  dateUploaded: Date;
+  width?: number;
+  height?: number;
+  aperture?: string;
+  shutterSpeed?: string;
+  iso?: number;
+  focalLength?: string;
+  latitude?: number;
+  longitude?: number;
+  src?: string;
+  size?: number;
+  mimeType?: string;
+  dateCreated?: Date;
+  dateUpdated?: Date;
 }
 
 export interface Album {

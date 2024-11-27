@@ -1,7 +1,19 @@
 import { NextAuthOptions } from 'next-auth';
+import { DefaultSession, DefaultUser } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { compare } from 'bcrypt';
+import { compare } from 'bcryptjs';
 import { connectToDatabase } from './mongodb';
+
+// Extend the User type
+declare module 'next-auth' {
+  interface User extends DefaultUser {
+    role?: string;
+  }
+
+  interface Session extends DefaultSession {
+    user: User;
+  }
+}
 
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error('Please define the NEXTAUTH_SECRET environment variable');

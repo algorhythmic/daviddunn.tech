@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { connectToMongoDB } from '@/lib/db';
-import PhotoModel, { IPhoto } from '@/models/photo';
+import { connectToDatabase } from '@/lib/mongodb';
+import { IPhoto } from '@/types/schema';
+import PhotoModel from '@/models/photo';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Image as ImageIcon, Calendar } from 'lucide-react';
@@ -17,7 +18,7 @@ export const revalidate = 3600; // Revalidate every hour
 
 async function getPhotos(): Promise<IPhoto[]> {
   try {
-    await connectToMongoDB();
+    await connectToDatabase();
     const photos = await PhotoModel.find()
       .sort({ dateTaken: -1 })
       .lean()

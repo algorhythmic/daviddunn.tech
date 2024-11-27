@@ -1,6 +1,7 @@
 import { connectToDatabase } from '@/lib/mongodb';
-import { Photo } from '@/models/Photo';
+import { PhotoModel } from '@/models/photo';
 import { revalidatePath } from 'next/cache';
+import type { IPhoto } from '@/types/schema';
 
 export async function uploadPhoto(photoData: {
   title: string;
@@ -26,22 +27,22 @@ export async function uploadPhoto(photoData: {
 }) {
   await connectToDatabase();
   
-  const photo = new Photo({
+  const photoModel = new PhotoModel({
     ...photoData,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
 
-  await photo.save();
+  await photoModel.save();
   revalidatePath('/photos');
   revalidatePath('/admin/photos');
-  return photo;
+  return photoModel;
 }
 
-export async function updatePhoto(id: string, photoData: Partial<typeof Photo>) {
+export async function updatePhoto(id: string, photoData: Partial<IPhoto>) {
   await connectToDatabase();
   
-  const photo = await Photo.findByIdAndUpdate(
+  const photoModel = await PhotoModel.findByIdAndUpdate(
     id,
     {
       ...photoData,
@@ -50,41 +51,41 @@ export async function updatePhoto(id: string, photoData: Partial<typeof Photo>) 
     { new: true }
   );
 
-  if (!photo) {
+  if (!photoModel) {
     throw new Error('Photo not found');
   }
 
   revalidatePath('/photos');
   revalidatePath('/admin/photos');
-  return photo;
+  return photoModel;
 }
 
 export async function deletePhoto(id: string) {
   await connectToDatabase();
   
-  const photo = await Photo.findByIdAndDelete(id);
+  const photoModel = await PhotoModel.findByIdAndDelete(id);
   
-  if (!photo) {
+  if (!photoModel) {
     throw new Error('Photo not found');
   }
 
   revalidatePath('/photos');
   revalidatePath('/admin/photos');
-  return photo;
+  return photoModel;
 }
 
 export async function getAllPhotos() {
   await connectToDatabase();
-  return Photo.find().sort({ createdAt: -1 });
+  return PhotoModel.find().sort({ createdAt: -1 });
 }
 
 export async function getPhotoById(id: string) {
   await connectToDatabase();
-  const photo = await Photo.findById(id);
+  const photoModel = await PhotoModel.findById(id);
   
-  if (!photo) {
+  if (!photoModel) {
     throw new Error('Photo not found');
   }
   
-  return photo;
+  return photoModel;
 }

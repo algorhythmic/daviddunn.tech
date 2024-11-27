@@ -1,11 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
-import { connectToMongoDB } from '@/lib/db';
-import Photo from '@/models/mongodb/Photo';
+import { connectToDatabase } from '@/lib/mongodb';
+import { PhotoModel } from '@/models/photo';
+import { IPhoto } from '@/types/schema';
 import { generateS3Key } from '@/lib/s3';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import sharp from 'sharp';
+import { ExifImage } from 'exif';
+import { promisify } from 'util';
+
+interface ExifData {
+  make?: string;
+  model?: string;
+  lensModel?: string;
+  focalLength?: string;
+  aperture?: string;
+  exposureTime?: string;
+  iso?: number;
+}
+
+interface ExifImageData {
+  image: {
+    Make?: string;
+    Model?: string;
+    [key: string]: unknown;
+  };
+  exif: {
+    ExposureTime?: number;
+    FNumber?: number;
+    ISO?: number;
+    FocalLength?: number;
+    LensModel?: string;
+    [key: string]: unknown;
+  };
+}
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -48,12 +77,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid file format' }, { status: 400 });
     }
 
-    await connectToMongoDB();
+    await connectToDatabase();
 
     // Process each photo
     const photoMetadataPromises = photos.map(async (file) => {
       const buffer = await file.arrayBuffer();
-      const metadata = await sharp(Buffer.from(buffer)).metadata();
+      const sharpInstance = sharp(Buffer.from(buffer));
+      const metadata = await sharpInstance.metadata();
 
       const s3Key = generateS3Key(file.name);
       const uploadParams = {
@@ -73,8 +103,34 @@ export async function POST(request: NextRequest) {
       const cleanKey = s3Key.replace(/^\//, '');
       const publicUrl = `${baseUrl}/${cleanKey}`;
 
-      // Create photo document
-      const photo = new Photo({
+      // Extract EXIF data if available
+      let exifData: ExifData | null = null;
+      if (metadata.exif) {
+        try {
+          const getExif = promisify((buffer: Buffer, cb: (error: Error | null, data?: ExifImageData) => void) => {
+            new ExifImage({ image: buffer }, (error, data) => cb(error, data));
+          });
+
+          const exif = await getExif(Buffer.from(buffer));
+          if (exif && exif.image && exif.exif) {
+            exifData = {
+              make: exif.image.Make,
+              model: exif.image.Model,
+              lensModel: exif.exif.LensModel,
+              focalLength: exif.exif.FocalLength ? `${exif.exif.FocalLength}mm` : undefined,
+              aperture: exif.exif.FNumber ? `f/${exif.exif.FNumber}` : undefined,
+              exposureTime: exif.exif.ExposureTime ? `${exif.exif.ExposureTime}s` : undefined,
+              iso: exif.exif.ISO
+            };
+          }
+        } catch (error) {
+          console.error('Error extracting EXIF data:', error);
+          // Continue without EXIF data
+        }
+      }
+
+      // Create photo document with IPhoto structure
+      const photoData: Partial<IPhoto> = {
         title: title || file.name.replace(/\.[^/.]+$/, ""),
         description: description || "",
         location: location || "",
@@ -85,13 +141,18 @@ export async function POST(request: NextRequest) {
         dateCreated: new Date(),
         dateUpdated: new Date(),
         tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        metadata: {
-          width: metadata.width,
-          height: metadata.height,
-        },
-      });
+        width: metadata.width,
+        height: metadata.height,
+        camera: exifData?.make && exifData.model ? `${exifData.make} ${exifData.model}` : undefined,
+        lens: exifData?.lensModel,
+        focalLength: exifData?.focalLength,
+        aperture: exifData?.aperture,
+        shutterSpeed: exifData?.exposureTime,
+        iso: exifData?.iso,
+      };
 
-      await photo.save();
+      // Create and save the photo
+      const photo = await PhotoModel.create(photoData);
 
       return {
         photoId: photo._id,
@@ -103,12 +164,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'Photos uploaded successfully',
-      uploads: results
+      photos: results
     });
+
   } catch (error) {
-    console.error('Error processing photo upload:', error);
+    console.error('Error uploading photos:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to process upload' },
+      { error: error instanceof Error ? error.message : 'Failed to upload photos' },
       { status: 500 }
     );
   }

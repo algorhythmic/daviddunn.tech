@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToMongoDB } from '@/lib/db';
-import { Post } from '@/models/post';
+import { PostModel } from '@/models/post';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
 
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
     const limit = parseInt(searchParams.get('limit') || '10');
     const page = parseInt(searchParams.get('page') || '1');
-    const published = searchParams.get('published') !== 'false'; // Default to true
+    const published = searchParams.get('published') !== 'false';
 
     await connectToMongoDB();
     
@@ -41,10 +41,10 @@ export async function GET(request: Request) {
       query.$text = { $search: search };
     }
 
-    const totalPosts = await Post.countDocuments(query);
+    const totalPosts = await PostModel.countDocuments(query);
     const totalPages = Math.ceil(totalPosts / limit);
     
-    const posts = await Post.find(query)
+    const posts = await PostModel.find(query)
       .sort({ publishedAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -82,12 +82,11 @@ export async function POST(request: Request) {
     const data = await request.json();
     await connectToMongoDB();
 
-    // Set publishedAt if the post is being published
     if (data.published) {
       data.publishedAt = new Date();
     }
 
-    const post = new Post(data);
+    const post = new PostModel(data);
     await post.save();
 
     return NextResponse.json(post, { status: 201 });
@@ -111,9 +110,9 @@ export async function PUT(request: Request) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
+    const data = await request.json();
+    const { id, ...updateData } = data;
+
     if (!id) {
       return NextResponse.json(
         { error: 'Post ID is required' },
@@ -121,17 +120,15 @@ export async function PUT(request: Request) {
       );
     }
 
-    const data = await request.json();
     await connectToMongoDB();
 
-    // Set publishedAt if the post is being published for the first time
-    if (data.published && !data.publishedAt) {
-      data.publishedAt = new Date();
+    if (updateData.published && !updateData.publishedAt) {
+      updateData.publishedAt = new Date();
     }
 
-    const post = await Post.findByIdAndUpdate(
+    const post = await PostModel.findByIdAndUpdate(
       id,
-      { $set: data },
+      { $set: updateData },
       { new: true, runValidators: true }
     );
 
@@ -165,7 +162,7 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json(
         { error: 'Post ID is required' },
@@ -175,7 +172,7 @@ export async function DELETE(request: Request) {
 
     await connectToMongoDB();
 
-    const post = await Post.findByIdAndDelete(id);
+    const post = await PostModel.findByIdAndDelete(id);
 
     if (!post) {
       return NextResponse.json(
@@ -184,10 +181,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    return NextResponse.json(
-      { message: 'Post deleted successfully' },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Post deleted successfully' });
   } catch (error) {
     console.error('Error deleting post:', error);
     return NextResponse.json(

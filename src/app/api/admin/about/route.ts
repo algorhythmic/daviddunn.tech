@@ -1,84 +1,78 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { connectToMongoDB } from '@/lib/db';
-import { AboutContent } from '@/models/about';
+import { AboutContent, IAboutContent } from '@/models/about';
+import { Types, Document } from 'mongoose';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function POST(request: Request) {
-  try {
-    const data = await request.json();
-    console.log('Received data:', data); // Debug log
+type LeanAboutContent = Omit<IAboutContent, keyof Document> & {
+  _id: Types.ObjectId;
+};
 
-    await connectToMongoDB();
-    
-    // Ensure all fields exist with defaults
-    const sanitizedData = {
-      statement: data.statement || '',
-      resumeUrl: data.resumeUrl || '',
-      previewImages: {
-        resume: data.previewImages?.resume || '',
-        linkedin: data.previewImages?.linkedin || '',
-        github: data.previewImages?.github || '',
-        instagram: data.previewImages?.instagram || ''
-      },
-      socialLinks: {
-        linkedin: data.socialLinks?.linkedin || '',
-        github: data.socialLinks?.github || '',
-        instagram: data.socialLinks?.instagram || ''
-      },
-      lastUpdated: new Date()
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    const statement = formData.get('statement') as string;
+    const resumeUrl = formData.get('resumeUrl') as string;
+    const socialLinks = {
+      linkedin: formData.get('linkedin') as string,
+      github: formData.get('github') as string,
+      instagram: formData.get('instagram') as string,
     };
 
-    console.log('Sanitized data:', sanitizedData); // Debug log
+    await connectToMongoDB();
+
+    // Validate required fields
+    if (!statement) {
+      return NextResponse.json(
+        { error: 'Statement is required' },
+        { status: 400 }
+      );
+    }
 
     // Update or create about content
-    const content = await AboutContent.findOneAndUpdate(
+    const content = (await AboutContent.findOneAndUpdate(
       {},
-      { $set: sanitizedData }, // Use $set to update only specified fields
-      { 
+      {
+        $set: {
+          statement,
+          resumeUrl,
+          socialLinks,
+          lastUpdated: new Date(),
+        }
+      },
+      {
         upsert: true,
         new: true,
         runValidators: false, // Disable validation since we're handling it manually
         lean: true
       }
-    ) as any;  // Temporarily type as any to handle the _id conversion
+    )) as LeanAboutContent;
 
     if (!content) {
       console.error('No content returned after update');
       throw new Error('Failed to update content');
     }
 
-    console.log('Updated content:', content); // Debug log
-
-    // Convert _id to string and create a plain object
-    const serializedContent = {
-      ...content,
-      _id: content._id?.toString() || '',  // Safely access and convert _id
-      lastUpdated: content.lastUpdated.toISOString()
-    };
-
-    console.log('Serialized content:', serializedContent); // Debug log
-
-    return NextResponse.json(serializedContent, {
+    // Convert _id to string and return response
+    return NextResponse.json({
+      content: {
+        ...content,
+        _id: content._id.toString(),
+      }
+    }, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
       }
     });
+
   } catch (error) {
     console.error('Error updating about content:', error);
-    
-    // Type guard for Error object
-    const err = error as Error;
-    console.error('Error details:', {
-      name: err.name,
-      message: err.message,
-      stack: err.stack
-    });
     return NextResponse.json(
-      { error: 'Failed to update about content', details: err.message },
+      { error: 'Failed to update about content' },
       { status: 500 }
     );
   }
@@ -87,44 +81,36 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     await connectToMongoDB();
-    const content = await AboutContent.findOne().lean() as any;
+    const content = (await AboutContent.findOne().lean()) as LeanAboutContent;
 
     if (!content) {
       return NextResponse.json({}, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
         }
       });
     }
 
-    // Convert _id to string and create a plain object
-    const serializedContent = {
-      ...content,
-      _id: content._id?.toString() || '',  // Safely access and convert _id
-      lastUpdated: content.lastUpdated.toISOString()
-    };
-
-    return NextResponse.json(serializedContent, {
+    // Convert _id to string
+    return NextResponse.json({
+      content: {
+        ...content,
+        _id: content._id.toString(),
+      }
+    }, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
       }
     });
+
   } catch (error) {
     console.error('Error fetching about content:', error);
-    
-    // Type guard for Error object
-    const err = error as Error;
-    console.error('Error details:', {
-      name: err.name,
-      message: err.message,
-      stack: err.stack
-    });
     return NextResponse.json(
-      { error: 'Failed to fetch about content', details: err.message },
+      { error: 'Failed to fetch about content' },
       { status: 500 }
     );
   }

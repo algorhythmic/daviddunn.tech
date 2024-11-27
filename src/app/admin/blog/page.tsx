@@ -1,12 +1,43 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { testPosts } from '@/data/testData';
+import { BlogPost } from '@/types/schema';
 
 export default function BlogAdmin() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch('/api/blog');
+        if (!response.ok) throw new Error('Failed to fetch blog posts');
+        const data = await response.json();
+        setPosts(data.posts);
+      } catch (error) {
+        console.error('Error fetching blog posts:', error);
+        setError('Failed to load blog posts');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -25,7 +56,7 @@ export default function BlogAdmin() {
       </div>
 
       <div className="grid gap-4">
-        {testPosts.map((post) => (
+        {posts.map((post) => (
           <Card key={post._id.toString()}>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -46,7 +77,7 @@ export default function BlogAdmin() {
             <CardContent>
               <div className="flex justify-between items-center">
                 <div className="text-sm text-muted-foreground">
-                  Last updated {post.updatedAt.toLocaleDateString()}
+                  Last updated {new Date(post.updatedAt).toLocaleDateString()}
                 </div>
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/admin/blog/${post._id}`}>

@@ -3,31 +3,19 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { testPosts } from '@/data/testData';
 import { streamlitApps } from '@/data/streamlit-apps';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import PhotoModal from '@/components/PhotoModal';
 import { AnalyticsPreview } from '@/components/analytics/AnalyticsPreview';
-import { Photo } from '@/types/schema';
+import { IPhoto, BlogPost } from '@/types/schema';
 import { CalendarDays, ArrowRight, Camera } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
-interface PhotoResponse {
-  photos: Photo[];
-  totalPhotos: number;
-}
-
 export default function Home() {
-  // Get the latest published blog posts
-  const latestPosts = testPosts
-    .filter(post => post.status === 'published')
-    .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
-    .slice(0, 2);
-
   const [currentAppIndex, setCurrentAppIndex] = useState(0);
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<IPhoto | null>(null);
+  const [photos, setPhotos] = useState<IPhoto[]>([]);
+  const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
 
   useEffect(() => {
     const appIntervalId = setInterval(() => {
@@ -53,7 +41,21 @@ export default function Home() {
       }
     };
 
+    const fetchBlogPosts = async () => {
+      try {
+        const response = await fetch('/api/blog?limit=2');
+        if (!response.ok) {
+          throw new Error('Failed to fetch blog posts');
+        }
+        const data = await response.json();
+        setLatestPosts(data.posts || []);
+      } catch (error) {
+        console.error('Error fetching blog posts:', error);
+      }
+    };
+
     fetchPhotos();
+    fetchBlogPosts();
   }, []);
 
   return (
@@ -137,19 +139,21 @@ export default function Home() {
                   <Link 
                     key={post._id.toString()} 
                     href={`/blog/${post.slug}`}
-                    className="block group"
+                    className="block p-4 rounded-lg hover:bg-muted transition-colors"
                   >
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <h3 className="font-medium mb-2">{post.title}</h3>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
                         <CalendarDays className="h-4 w-4" />
-                        {new Date(post.publishedAt).toLocaleDateString()}
+                        <time dateTime={post.publishedAt.toString()}>
+                          {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </time>
                       </div>
-                      <h3 className="font-medium group-hover:text-primary transition-colors line-clamp-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {post.excerpt}
-                      </p>
+                      <span>{post.readingTime} min read</span>
                     </div>
                   </Link>
                 ))}
@@ -184,7 +188,7 @@ export default function Home() {
                   className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer"
                 >
                   <Image
-                    src={photo.url}
+                    src={photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`}
                     alt={photo.title}
                     fill
                     className="object-cover transition-transform group-hover:scale-105"
