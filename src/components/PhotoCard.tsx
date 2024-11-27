@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Camera, MapPin, Calendar } from 'lucide-react';
-import type { Photo } from '@/types/schema';
+import { IPhoto } from '@/models/photo';
 import Image from 'next/image';
 import PhotoModal from './PhotoModal';
 import {
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/tooltip';
 
 interface PhotoCardProps {
-  photo: Photo;
+  photo: IPhoto;
 }
 
 export default function PhotoCard({ photo }: PhotoCardProps) {
@@ -35,8 +35,8 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
 
   useEffect(() => {
     // Validate photo and environment variables
-    if (!photo?.url && !photo?.s3Key) {
-      console.error('Photo has no URL or s3Key:', photo);
+    if (!photo?.s3Key) {
+      console.error('Photo has no s3Key:', photo);
       return;
     }
 
@@ -47,20 +47,13 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
     }
 
     // Set the image URL
-    const url = photo.url || (photo.s3Key && `${cloudFrontUrl}/${photo.s3Key}`);
+    const url = photo.url || `${cloudFrontUrl}/${photo.s3Key}`;
     setImageUrl(url);
 
-    // Load image dimensions
-    if (url) {
-      const img = new Image();
-      img.src = url;
-      img.onload = () => {
-        setImageDimensions({
-          width: img.naturalWidth,
-          height: img.naturalHeight
-        });
-      };
-    }
+    // Set image dimensions
+    const width = photo.width ?? photo.metadata?.width ?? 1920;
+    const height = photo.height ?? photo.metadata?.height ?? 1080;
+    setImageDimensions({ width, height });
   }, [photo]);
 
   // Return null if we don't have a valid image URL
@@ -68,8 +61,10 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
     return null;
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date: Date | string | undefined) => {
+    if (!date) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -81,8 +76,8 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
       <Card className="group overflow-hidden">
         <HoverCard>
           <HoverCardTrigger asChild>
-            <div 
-              className="relative cursor-pointer"
+            <button 
+              className="relative cursor-pointer w-full text-left border-0 bg-transparent p-0"
               onClick={() => setIsModalOpen(true)}
             >
               <div className="aspect-[4/3] w-full overflow-hidden relative">
@@ -96,16 +91,18 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
                 />
               </div>
               <div className="absolute inset-0 bg-black bg-opacity-0 transition-opacity duration-300 group-hover:bg-opacity-10" />
-            </div>
+            </button>
           </HoverCardTrigger>
           <HoverCardContent className="w-80">
             <div className="space-y-2">
               <h4 className="text-sm font-semibold">{photo.title}</h4>
               <p className="text-sm text-muted-foreground">{photo.description}</p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Camera className="h-4 w-4" />
-                <span>{photo.metadata.camera?.make} {photo.metadata.camera?.model}</span>
-              </div>
+              {photo.metadata?.camera && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Camera className="h-4 w-4" />
+                  <span>{photo.metadata.camera}</span>
+                </div>
+              )}
             </div>
           </HoverCardContent>
         </HoverCard>
@@ -120,36 +117,31 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
 
         <CardFooter className="grid grid-cols-2 gap-2">
           <TooltipProvider>
-            {photo.metadata.location && (
+            {photo.location && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4" />
-                    <span className="truncate">{photo.metadata.location?.name}</span>
+                    <span className="truncate">{photo.location}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Location: {photo.metadata.location?.name}</p>
-                  <p className="text-xs">
-                    {photo.metadata.location?.latitude}, {photo.metadata.location?.longitude}
-                  </p>
+                  <p>Location: {photo.location}</p>
                 </TooltipContent>
               </Tooltip>
             )}
 
-            {photo.metadata.dateTaken && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span className="truncate">{formatDate(photo.metadata.dateTaken)}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Date taken: {formatDate(photo.metadata.dateTaken)}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span className="truncate">{formatDate(photo.dateTaken)}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Date taken: {formatDate(photo.dateTaken)}</p>
+              </TooltipContent>
+            </Tooltip>
           </TooltipProvider>
         </CardFooter>
       </Card>
@@ -157,10 +149,33 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
       {isModalOpen && imageDimensions && (
         <PhotoModal 
           photo={{
-            ...photo,
-            dimensions: imageDimensions
+            _id: photo._id.toString(),
+            title: photo.title,
+            description: photo.description,
+            url: imageUrl,
+            s3Key: photo.s3Key,
+            tags: photo.tags,
+            location: photo.location,
+            dateCreated: photo.dateUploaded,
+            dateUpdated: photo.dateUploaded,
+            metadata: {
+              width: imageDimensions.width,
+              height: imageDimensions.height,
+              camera: photo.metadata?.camera ? {
+                make: photo.metadata.camera,
+                model: undefined
+              } : undefined,
+              lens: photo.metadata?.lens,
+              settings: photo.metadata?.settings,
+              location: photo.location ? {
+                name: photo.location,
+                latitude: undefined,
+                longitude: undefined
+              } : undefined
+            }
           }}
           onClose={() => setIsModalOpen(false)}
+          isOpen={isModalOpen}
         />
       )}
     </>

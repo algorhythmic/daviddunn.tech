@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Photo } from '@/models/mongodb/Photo';
+import { IPhoto } from '@/models/photo';
 import { PhotoGrid } from './photo-grid';
 import { PhotoLightbox } from './photo-lightbox';
 
 interface GalleryProps {
-  photos: Photo[];
+  photos: IPhoto[];
 }
 
 export function Gallery({ photos }: GalleryProps) {

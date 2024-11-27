@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import 'photoswipe/style.css';
-import { Photo } from '@/models/mongodb/Photo';
+import { IPhoto } from '@/models/photo';
 import PhotoSwipe from 'photoswipe';
 
 interface PhotoLightboxProps {
-  photos: Photo[];
+  photos: IPhoto[];
   initialIndex: number;
   isOpen: boolean;
   onClose: () => void;
@@ -53,22 +53,20 @@ export function PhotoLightbox({ photos, initialIndex, isOpen, onClose }: PhotoLi
       return;
     }
 
-    const options = {
-      index: currentIndex,
-      dataSource: photos.map((photo) => ({
-        src: `${process.env.NEXT_PUBLIC_S3_URL}/${photo.s3Key}`,
-        w: 1920,
-        h: 1080,
-        alt: photo.title || 'Photo',
+    const pswp = new PhotoSwipe({
+      dataSource: photos.map(photo => ({
+        src: photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`,
+        width: photo.width ?? photo.metadata?.width ?? 1920,
+        height: photo.height ?? photo.metadata?.height ?? 1080,
+        alt: photo.title
       })),
+      index: currentIndex,
       wheelToZoom: true,
       closeOnVerticalDrag: false,
       padding: { top: 20, bottom: 20, left: 20, right: 20 },
       bgOpacity: 0.9,
-      showHideAnimationType: 'fade' as 'fade'
-    };
-
-    const pswp = new PhotoSwipe(options);
+      showHideAnimationType: 'fade' as const,
+    });
     setPhotoSwipe(pswp);
     pswp.init();
   }, [isOpen, photos, currentIndex, photoSwipe]);

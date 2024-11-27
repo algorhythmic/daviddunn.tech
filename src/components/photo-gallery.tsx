@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import PhotoAlbum from 'react-photo-album';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/style.css';
-import { Photo } from '@/models/mongodb/Photo';
-import Image from "next/image";
+import { IPhoto } from '@/models/photo';
+import PhotoAlbum from 'react-photo-album';
+import type { Photo } from 'react-photo-album';
 
 interface PhotoGalleryProps {
-  photos: Photo[];
-  onPhotoClick?: (photo: Photo) => void;
+  photos: IPhoto[];
+  onPhotoClick?: (photo: IPhoto) => void;
 }
 
 export function PhotoGallery({ photos, onPhotoClick }: PhotoGalleryProps) {
@@ -28,8 +28,8 @@ export function PhotoGallery({ photos, onPhotoClick }: PhotoGalleryProps) {
     const pswp = new PhotoSwipe({
       dataSource: photos.map(photo => ({
         src: `${process.env.NEXT_PUBLIC_S3_URL}/${photo.s3Key}`,
-        width: 1920, // Default width, will be adjusted by PhotoSwipe
-        height: 1080, // Default height, will be adjusted by PhotoSwipe
+        width: photo.width ?? photo.metadata?.width ?? 1920,
+        height: photo.height ?? photo.metadata?.height ?? 1080,
         alt: photo.title || 'Photo'
       })),
       index,
@@ -54,43 +54,23 @@ export function PhotoGallery({ photos, onPhotoClick }: PhotoGalleryProps) {
     }
   }, [photos, onPhotoClick, openLightbox]);
 
-  const renderPhoto = useCallback(({ photo, imageProps: { style } }) => (
-    <div
-      style={{
-        borderRadius: '4px',
-        overflow: 'hidden',
-        ...style
-      }}
-    >
-      <Image
-        src={photo.src}
-        alt={photo.alt || "Gallery photo"}
-        width={photo.width || 800}
-        height={photo.height || 600}
-        className="object-cover w-full h-full rounded-lg"
-      />
-    </div>
-  ), []);
+  const processedPhotos: Photo[] = photos.map(photo => ({
+    src: photo.url || `${process.env.NEXT_PUBLIC_S3_URL}/${photo.s3Key}`,
+    width: photo.width ?? photo.metadata?.width ?? 1920,
+    height: photo.height ?? photo.metadata?.height ?? 1080,
+    alt: photo.title || '',
+    key: photo._id.toString()
+  }));
 
   return (
-    <PhotoAlbum
-      layout="masonry"
-      photos={photos.map(photo => ({
-        src: `${process.env.NEXT_PUBLIC_S3_URL}/${photo.s3Key}`,
-        width: 1920, // Default width, will be adjusted by PhotoSwipe
-        height: 1080, // Default height, will be adjusted by PhotoSwipe
-        alt: photo.title || 'Photo',
-        title: photo.title
-      }))}
-      onClick={handleClick}
-      renderPhoto={renderPhoto}
-      spacing={8}
-      columns={(containerWidth) => {
-        if (containerWidth < 640) return 1;
-        if (containerWidth < 768) return 2;
-        if (containerWidth < 1024) return 3;
-        return 4;
-      }}
-    />
+    <div className="w-full">
+      <PhotoAlbum
+        layout="rows"
+        photos={processedPhotos}
+        onClick={handleClick}
+        spacing={16}
+        targetRowHeight={300}
+      />
+    </div>
   );
 }

@@ -1,12 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
-import PhotoAlbum, { RenderPhotoProps } from 'react-photo-album';
-import { Photo } from '@/types/schema';
+import PhotoAlbum, { RenderPhotoProps, RenderPhotoContext } from 'react-photo-album';
+import { IPhoto } from '@/models/photo';
 import Image from 'next/image';
 
 interface PhotoGridProps {
-  photos: Photo[];
+  photos: IPhoto[];
   onPhotoClick: (index: number) => void;
 }
 
@@ -15,11 +15,11 @@ export function PhotoGrid({ photos, onPhotoClick }: PhotoGridProps) {
     if (!photos || photos.length === 0) return [];
     
     return photos
-      .filter((photo): photo is Photo => photo !== null)
+      .filter((photo): photo is IPhoto => photo !== null)
       .map(photo => ({
-        src: photo.url,
-        width: photo.metadata?.width ?? 800,  
-        height: photo.metadata?.height ?? 600,  
+        src: photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`,
+        width: photo.width ?? photo.metadata?.width ?? 1920,
+        height: photo.height ?? photo.metadata?.height ?? 1080,
         alt: photo.title,
         title: photo.title,
         key: photo._id.toString(),
@@ -45,21 +45,22 @@ export function PhotoGrid({ photos, onPhotoClick }: PhotoGridProps) {
       layout="masonry"
       photos={processedPhotos}
       onClick={({ index }) => onPhotoClick(index)}
-      renderPhoto={({ photo, imageProps }: RenderPhotoProps<Photo>) => (
-        <div
-          className="group relative overflow-hidden rounded-md transition-transform hover:scale-[1.02]"
-          style={imageProps.style}
-        >
-          <Image
-            {...imageProps}
-            src={photo.src}
-            alt={photo.alt}
-            width={photo.width}
-            height={photo.height}
-          />
-          {/* Optional: Add hover effect or additional content */}
-        </div>
-      )}
+      render={{
+        photo: (props: RenderPhotoProps, context: RenderPhotoContext) => (
+          <div
+            className="group relative overflow-hidden rounded-md transition-transform hover:scale-[1.02]"
+          >
+            <Image
+              src={context.photo.src ?? ''}
+              alt={context.photo.alt ?? ''}
+              width={context.width ?? 0}
+              height={context.height ?? 0}
+              onClick={props.onClick} 
+            />
+            {/* Optional: Add hover effect or additional content */}
+          </div>
+        )
+      }}
       spacing={8}
       columns={(containerWidth) => {
         if (containerWidth < 640) return 1;
