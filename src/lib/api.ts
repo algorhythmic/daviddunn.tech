@@ -1,6 +1,6 @@
-import type { Photo } from '@/types/schema';
+import type { IPhoto } from '@/types/schema';
 
-export async function getPhotos(): Promise<Photo[]> {
+export async function getPhotos(): Promise<IPhoto[]> {
   const response = await fetch('/api/photos', {
     method: 'GET',
     headers: {
@@ -15,7 +15,7 @@ export async function getPhotos(): Promise<Photo[]> {
   return response.json();
 }
 
-export async function getPhotosByCategory(category: string): Promise<Photo[]> {
+export async function getPhotosByCategory(category: string): Promise<IPhoto[]> {
   const response = await fetch(`/api/photos?category=${encodeURIComponent(category)}`, {
     method: 'GET',
     headers: {
@@ -30,7 +30,7 @@ export async function getPhotosByCategory(category: string): Promise<Photo[]> {
   return response.json();
 }
 
-export async function searchPhotos(query: string): Promise<Photo[]> {
+export async function searchPhotos(query: string): Promise<IPhoto[]> {
   const response = await fetch(`/api/photos?search=${encodeURIComponent(query)}`, {
     method: 'GET',
     headers: {
