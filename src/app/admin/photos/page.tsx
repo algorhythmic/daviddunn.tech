@@ -266,7 +266,7 @@ export default function PhotosPage() {
           <DialogHeader>
             <DialogTitle>Upload Photos</DialogTitle>
             <DialogDescription>
-              Upload your photos with title, description, location, and tags
+              Click &ldquo;Upload Photos&rdquo; to add new photos to your gallery
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">

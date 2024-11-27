@@ -10,9 +10,10 @@ if (!MONGODB_URI) {
 }
 
 declare global {
+  // eslint-disable-next-line no-var
   var mongoDb: {
-    client: any;
-    promise: Promise<any> | null;
+    client: MongoClient | null;
+    promise: Promise<MongoClient> | null;
   };
 }
 

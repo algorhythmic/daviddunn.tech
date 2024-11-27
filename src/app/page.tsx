@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { testPosts } from '@/data/testData';
 import { streamlitApps } from '@/data/streamlit-apps';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { CalendarDays, ArrowRight, Camera } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AnalyticsPreview } from '@/components/analytics/AnalyticsPreview';

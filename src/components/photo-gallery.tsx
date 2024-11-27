@@ -54,7 +54,7 @@ export function PhotoGallery({ photos, onPhotoClick }: PhotoGalleryProps) {
     }
   }, [photos, onPhotoClick, openLightbox]);
 
-  const renderPhoto = useCallback(({ photo, imageProps: { alt, style, ...rest } }) => (
+  const renderPhoto = useCallback(({ photo, imageProps: { style } }) => (
     <div
       style={{
         borderRadius: '4px',

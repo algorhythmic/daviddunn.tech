@@ -1,12 +1,3 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-
-// Create S3 client with minimal configuration
-const s3Client = new S3Client({
-  region: 'us-east-2',
-});
-
-const BUCKET_NAME = 'daviddunn.tech';
-
 // Helper function to extract S3 key from CloudFront URL
 export const extractS3KeyFromUrl = (url: string): string => {
   if (!url) throw new Error('URL is required');

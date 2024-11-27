@@ -3,7 +3,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { connectToMongoDB } from '@/lib/db';
 import Photo from '@/models/mongodb/Photo';
-import { ObjectId } from 'mongodb';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Image as ImageIcon, Calendar } from 'lucide-react';

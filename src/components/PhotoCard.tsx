@@ -25,12 +25,16 @@ import {
 
 interface PhotoCardProps {
   photo: Photo;
-  onClick?: () => void;
 }
 
-export default function PhotoCard({ photo, onClick }: PhotoCardProps) {
+export default function PhotoCard({ photo }: PhotoCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  if (!photo?.url && !photo?.s3Key) {
+    console.error('Photo has no URL or s3Key:', photo);
+    return null;
+  }
 
   const cloudFrontUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
   if (!cloudFrontUrl) {
@@ -40,13 +44,8 @@ export default function PhotoCard({ photo, onClick }: PhotoCardProps) {
 
   const imageUrl = photo.url || (photo.s3Key && `${cloudFrontUrl}/${photo.s3Key}`);
 
-  if (!imageUrl) {
-    console.error('Photo has no URL or s3Key:', photo);
-    return null;
-  }
-
   useEffect(() => {
-    // Get image dimensions for PhotoSwipe
+    if (!imageUrl) return;
     const img = new Image();
     img.src = imageUrl;
     img.onload = () => {

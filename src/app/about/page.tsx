@@ -6,12 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpRight, FileText } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { IAboutContent } from '@/models/about';
-import { useRouter } from 'next/navigation';
 
 export default function AboutPage() {
   const [aboutContent, setAboutContent] = useState<IAboutContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchAboutContent = async () => {
@@ -40,10 +38,6 @@ export default function AboutPage() {
 
     return () => clearInterval(interval);
   }, []);
-
-  const refreshContent = () => {
-    router.refresh();
-  };
 
   // Move profiles inside the component and use useMemo to avoid unnecessary recalculations
   const profiles = useMemo(() => {

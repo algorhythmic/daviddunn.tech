@@ -7,7 +7,6 @@ import { authOptions } from '@/lib/auth.config';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
     const search = searchParams.get('search');
     const limit = parseInt(searchParams.get('limit') || '10');
     const page = parseInt(searchParams.get('page') || '1');

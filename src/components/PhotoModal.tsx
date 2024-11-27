@@ -18,14 +18,17 @@ interface PhotoModalProps {
   photos?: Photo[];
   index?: number;
   onClose?: () => void;
+  isOpen?: boolean;
 }
 
-export default function PhotoModal({ photo, photos, index = 0, onClose }: PhotoModalProps) {
+export default function PhotoModal({ photo, photos, index = 0, onClose, isOpen = true }: PhotoModalProps) {
   useEffect(() => {
+    if (!isOpen) return;
+    
     // Convert single photo to array if needed
     const photoArray = photo ? [photo] : photos || [];
     
-    let lightbox = new PhotoSwipeLightbox({
+    const lightbox = new PhotoSwipeLightbox({
       dataSource: photoArray.map(p => ({
         src: p.src || p.url || '',
         // Use default dimensions if not provided
@@ -50,7 +53,7 @@ export default function PhotoModal({ photo, photos, index = 0, onClose }: PhotoM
     return () => {
       lightbox.destroy();
     };
-  }, [photo, photos, index, onClose]);
+  }, [photo, photos, index, onClose, isOpen]);
 
   return null;
 }

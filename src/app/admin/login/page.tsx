@@ -55,7 +55,7 @@ export default function LoginPage() {
       } else {
         window.location.href = callbackUrl;
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Something went wrong',

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import PhotoCard from './PhotoCard';
 import { Photo } from '@/types/schema';
-import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
   Select,

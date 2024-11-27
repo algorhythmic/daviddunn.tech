@@ -174,7 +174,7 @@ export function AboutContentForm({ initialContent }: AboutContentFormProps) {
 
     // Validate social links
     const invalidLinks = Object.entries(content.socialLinks)
-      .filter(([_, url]) => url && !validateSocialLink(url))
+      .filter(([, url]) => url && !validateSocialLink(url))
       .map(([platform]) => platform);
 
     if (invalidLinks.length > 0) {

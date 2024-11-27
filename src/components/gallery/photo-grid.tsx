@@ -10,14 +10,15 @@ interface PhotoGridProps {
 }
 
 export function PhotoGrid({ photos, onPhotoClick }: PhotoGridProps) {
-  const renderPhoto = useCallback(({ photo, imageProps: { alt, style, ...rest } }) => (
+  const renderPhoto = useCallback(({ photo, imageProps: { style } }) => (
     <div
       className="group relative overflow-hidden rounded-md transition-transform hover:scale-[1.02]"
       style={style}
     >
       {/* Use regular img tag instead of Next.js Image */}
       <img
-        {...rest}
+        src={photo.src}
+        alt={photo.alt || 'Gallery photo'}
         style={{
           ...style,
           width: '100%',

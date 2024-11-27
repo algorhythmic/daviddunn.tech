@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 }
 
 // Handle OPTIONS requests for CORS
-export async function OPTIONS(request: Request) {
+export async function OPTIONS() {
   return NextResponse.json(
     {},
     {

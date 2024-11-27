@@ -5,10 +5,8 @@ export default function AlbumNotFound() {
   return (
     <main className="container mx-auto px-4 py-16">
       <div className="max-w-2xl mx-auto text-center">
-        <h1 className="text-4xl font-bold mb-4">Album Not Found</h1>
-        <p className="text-lg text-muted-foreground mb-8">
-          The photo album you're looking for doesn't exist or has been removed.
-        </p>
+        <h2 className="text-2xl font-semibold">Photo not found</h2>
+        <p className="text-muted-foreground">We couldn&apos;t find the photo you&apos;re looking for.</p>
         <Link href="/photos">
           <Button>
             Return to Albums

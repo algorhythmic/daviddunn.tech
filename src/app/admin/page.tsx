@@ -21,7 +21,7 @@ interface StatItem {
 }
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   const stats: StatItem[] = [
     {
