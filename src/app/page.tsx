@@ -3,13 +3,24 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { testPosts, testAlbums } from '@/data/testData';
+import { testPosts } from '@/data/testData';
 import { streamlitApps } from '@/data/streamlit-apps';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, ArrowRight } from 'lucide-react';
+import { CalendarDays, ArrowRight, Camera } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AnalyticsPreview } from '@/components/analytics/AnalyticsPreview';
+import PhotoModal from '@/components/PhotoModal';
+
+interface Photo {
+  _id: string;
+  title: string;
+  description: string;
+  url: string;
+  location?: string;
+  dateCreated: string;
+  tags: string[];
+}
 
 export default function Home() {
   // Get the latest published blog posts
@@ -19,21 +30,34 @@ export default function Home() {
     .slice(0, 2);
 
   const [currentAppIndex, setCurrentAppIndex] = useState(0);
-  const [currentAlbumIndex, setCurrentAlbumIndex] = useState(0);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
 
   useEffect(() => {
     const appIntervalId = setInterval(() => {
       setCurrentAppIndex((prevIndex) => (prevIndex + 1) % streamlitApps.length);
     }, 5000);
 
-    const albumIntervalId = setInterval(() => {
-      setCurrentAlbumIndex((prevIndex) => (prevIndex + 1) % testAlbums.length);
-    }, 6700);
-
     return () => {
       clearInterval(appIntervalId);
-      clearInterval(albumIntervalId);
     };
+  }, []);
+
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const response = await fetch('/api/photos?limit=6');
+        if (!response.ok) {
+          throw new Error('Failed to fetch photos');
+        }
+        const data = await response.json();
+        setPhotos(data.photos || []);
+      } catch (error) {
+        console.error('Error fetching photos:', error);
+      }
+    };
+
+    fetchPhotos();
   }, []);
 
   return (
@@ -124,73 +148,89 @@ export default function Home() {
                         <CalendarDays className="h-4 w-4" />
                         {new Date(post.publishedAt).toLocaleDateString()}
                       </div>
-                      <h3 className="font-medium group-hover:text-primary">
+                      <h3 className="font-medium group-hover:text-primary transition-colors line-clamp-2">
                         {post.title}
                       </h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">
                         {post.excerpt}
                       </p>
-                      <div className="flex gap-2">
-                        {post.tags.slice(0, 3).map(tag => (
-                          <Badge key={tag} variant="secondary">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
                     </div>
                   </Link>
                 ))}
               </div>
             </CardContent>
           </Card>
-
-          {/* Photo Gallery */}
-          <Card className="md:col-span-2 border-gray-300 dark:border-gray-700">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center justify-between">
-                Photo Gallery
-                <Link 
-                  href="/photos" 
-                  className="text-sm font-normal text-muted-foreground hover:text-primary flex items-center gap-1"
-                >
-                  View all
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 pt-0">
-              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}> {/* 16:9 aspect ratio */}
-                {testAlbums.map((album, index) => (
-                  <Link 
-                    key={album._id} 
-                    href={`/photos`}
-                    className={`block group absolute inset-0 transition-all duration-1000 ${
-                      index === currentAlbumIndex ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-sm scale-110'
-                    }`}
-                  >
-                    <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 shadow-sm">
-                      <Image
-                        src={album.coverPhotoUrl}
-                        alt={album.title}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/60" />
-                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white [text-shadow: 0 1px 2px rgb(0 0 0 / 0.9)]">
-                        <h3 className="text-2xl font-semibold leading-tight line-clamp-1">{album.title}</h3>
-                        <p className="text-sm opacity-90 line-clamp-2 mt-2">{album.description}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Analytics Preview */}
-          <AnalyticsPreview />
         </div>
+
+        {/* Photo Gallery Preview */}
+        <Card className="border-gray-300 dark:border-gray-700">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="h-5 w-5" />
+                Photo Gallery
+              </div>
+              <Link 
+                href="/photos" 
+                className="text-sm font-normal text-muted-foreground hover:text-primary flex items-center gap-1"
+              >
+                View all
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {photos.map((photo) => (
+                <button
+                  key={photo._id}
+                  onClick={() => setSelectedPhoto(photo)}
+                  className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer"
+                >
+                  <Image
+                    src={photo.url}
+                    alt={photo.title}
+                    fill
+                    className="object-cover transition-transform group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/60 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 p-4 flex items-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-white text-sm font-medium line-clamp-2 [text-shadow: 0 1px 2px rgb(0 0 0 / 0.9)]">
+                      {photo.title}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Analytics Preview */}
+        <Card className="border-gray-300 dark:border-gray-700">
+          <CardHeader className="pb-4">
+            <CardTitle>Analytics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AnalyticsPreview />
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Photo Modal */}
+      {selectedPhoto && (
+        <PhotoModal
+          photo={{
+            _id: selectedPhoto._id,
+            title: selectedPhoto.title,
+            description: selectedPhoto.description,
+            url: selectedPhoto.url,
+            location: selectedPhoto.location,
+            dateCreated: selectedPhoto.dateCreated,
+            tags: selectedPhoto.tags,
+          }}
+          onClose={() => setSelectedPhoto(null)}
+        />
+      )}
     </main>
   );
 }

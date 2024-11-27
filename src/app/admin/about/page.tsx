@@ -11,8 +11,32 @@ export const metadata: Metadata = {
 async function getAboutContent() {
   try {
     await connectToMongoDB();
-    const content = await AboutContent.findOne().lean() as IAboutContent;
-    return content;
+    const content = await AboutContent.findOne().lean();
+    
+    if (!content) {
+      return null;
+    }
+
+    // Serialize the MongoDB document to a plain object
+    const serializedContent = {
+      _id: content._id.toString(),
+      statement: content.statement || '',
+      resumeUrl: content.resumeUrl || '',
+      previewImages: {
+        resume: content.previewImages?.resume || '',
+        linkedin: content.previewImages?.linkedin || '',
+        github: content.previewImages?.github || '',
+        instagram: content.previewImages?.instagram || ''
+      },
+      socialLinks: {
+        linkedin: content.socialLinks?.linkedin || '',
+        github: content.socialLinks?.github || '',
+        instagram: content.socialLinks?.instagram || ''
+      },
+      lastUpdated: content.lastUpdated ? content.lastUpdated.toISOString() : new Date().toISOString()
+    };
+
+    return serializedContent;
   } catch (error) {
     console.error('Error fetching about content:', error);
     return null;

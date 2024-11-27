@@ -1,4 +1,4 @@
-import { BlogPost, Album, Photo } from '@/types/schema';
+import { BlogPost, Photo } from '@/types/schema';
 
 export const testPosts: BlogPost[] = [
   {
@@ -231,60 +231,6 @@ Organize your documentation in a logical hierarchy:
         }
       ]
     }
-  },
-];
-
-export const testAlbums: Album[] = [
-  {
-    _id: '1',
-    title: 'Urban Architecture',
-    description: 'A collection of modern architectural marvels from cities around the world.',
-    coverPhotoUrl: 'https://images.unsplash.com/photo-1486718448742-163732cd1544',
-    category: 'Architecture',
-    tags: ['buildings', 'modern', 'city'],
-    keywords: ['skyscrapers', 'urban', 'design', 'modern architecture'],
-    photoCount: 24,
-    dateCreated: new Date('2024-01-15'),
-    dateUpdated: new Date('2024-01-20'),
-    location: 'Various Cities',
-  },
-  {
-    _id: '2',
-    title: 'Natural Landscapes',
-    description: 'Breathtaking views of mountains, forests, and waterfalls from my hiking adventures.',
-    coverPhotoUrl: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05',
-    category: 'Nature',
-    tags: ['landscapes', 'nature', 'outdoors'],
-    keywords: ['mountains', 'forests', 'waterfalls', 'hiking'],
-    photoCount: 36,
-    dateCreated: new Date('2024-01-10'),
-    dateUpdated: new Date('2024-01-18'),
-    location: 'Pacific Northwest',
-  },
-  {
-    _id: '3',
-    title: 'Street Photography',
-    description: 'Candid moments and street scenes capturing the essence of urban life.',
-    coverPhotoUrl: 'https://images.unsplash.com/photo-1476984251899-8d7fdfc5c92c',
-    category: 'Street',
-    tags: ['street', 'urban', 'people'],
-    keywords: ['candid', 'urban life', 'street scenes', 'people'],
-    photoCount: 42,
-    dateCreated: new Date('2024-01-05'),
-    dateUpdated: new Date('2024-01-17'),
-    location: 'New York City',
-  },
-  {
-    _id: '4',
-    title: 'Abstract Patterns',
-    description: 'A study of patterns, textures, and abstract compositions found in everyday life.',
-    coverPhotoUrl: 'https://images.unsplash.com/photo-1507908708918-778587c9e563',
-    category: 'Abstract',
-    tags: ['abstract', 'patterns', 'textures'],
-    keywords: ['patterns', 'textures', 'abstract', 'minimalism'],
-    photoCount: 18,
-    dateCreated: new Date('2024-01-12'),
-    dateUpdated: new Date('2024-01-19'),
   },
 ];
 

@@ -12,11 +12,15 @@ const s3Client = new S3Client({
 });
 
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME || 'daviddunn.tech';
-const CLOUDFRONT_URL = process.env.AWS_CLOUDFRONT_URL!;
+const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
 
 export async function POST(request: Request) {
   try {
     const { fileName, contentType } = await request.json();
+
+    if (!CLOUDFRONT_URL) {
+      throw new Error('CloudFront URL is not configured');
+    }
 
     // Create the command to put an object in S3
     const command = new PutObjectCommand({

@@ -1,45 +1,52 @@
-import mongoose, { Schema } from 'mongoose';
-import type { Photo } from '@/types/schema';
+import mongoose, { Schema, Document } from 'mongoose';
+import { ObjectId } from 'mongodb';
 
-const photoSchema = new Schema<Photo>({
+export interface IPhoto extends Document {
+  _id: ObjectId;
+  title: string;
+  description: string;
+  location?: string;
+  s3Key: string;
+  url: string;
+  size: number;
+  mimeType: string;
+  dateCreated: Date;
+  dateUpdated: Date;
+  tags: string[];
+}
+
+export type Photo = IPhoto;
+
+const photoSchema = new Schema<IPhoto>({
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, default: '' },
+  location: { type: String },
+  s3Key: { type: String, required: true },
   url: { type: String, required: true },
-  thumbnailUrl: { type: String, required: true },
-  category: { type: String, required: true },
-  tags: [{ type: String, required: true }],
-  metadata: {
-    width: { type: Number, required: true },
-    height: { type: Number, required: true },
-    format: { type: String, required: true },
-    size: { type: Number, required: true },
-    takenAt: { type: Date },
-    location: {
-      latitude: { type: Number },
-      longitude: { type: Number },
-      name: { type: String }
-    },
-    camera: {
-      make: { type: String },
-      model: { type: String },
-      settings: {
-        iso: { type: Number },
-        aperture: { type: String },
-        shutterSpeed: { type: String },
-        focalLength: { type: String }
-      }
-    }
-  },
-  uploadedAt: { type: Date, required: true },
-  updatedAt: { type: Date, required: true }
+  size: { type: Number, required: true },
+  mimeType: { type: String, required: true },
+  dateCreated: { type: Date, default: Date.now },
+  dateUpdated: { type: Date, default: Date.now },
+  tags: [{ type: String }]
 }, {
-  timestamps: true
+  timestamps: {
+    createdAt: 'dateCreated',
+    updatedAt: 'dateUpdated'
+  }
+});
+
+// Create text index for search
+photoSchema.index({ 
+  title: 'text', 
+  description: 'text',
+  location: 'text',
+  tags: 'text'
 });
 
 // Create indexes for better query performance
-photoSchema.index({ category: 1 });
-photoSchema.index({ tags: 1 });
-photoSchema.index({ uploadedAt: -1 });
-photoSchema.index({ 'metadata.takenAt': -1 });
+photoSchema.index({ s3Key: 1 }, { unique: true });
+photoSchema.index({ dateCreated: -1 });
 
-export default mongoose.models.Photo || mongoose.model<Photo>('Photo', photoSchema);
+// Check if the model exists before creating it
+const Photo = mongoose.models.Photo || mongoose.model<IPhoto>('Photo', photoSchema);
+export default Photo;

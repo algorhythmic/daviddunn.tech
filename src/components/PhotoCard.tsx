@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import { Camera, MapPin, Calendar } from 'lucide-react';
-import type { Photo } from '@/types/schema';
+import { Photo } from "@/models/mongodb/Photo";
 import PhotoModal from './PhotoModal';
 import {
   Card,
@@ -26,10 +25,37 @@ import {
 
 interface PhotoCardProps {
   photo: Photo;
+  onClick?: () => void;
 }
 
-export default function PhotoCard({ photo }: PhotoCardProps) {
+export default function PhotoCard({ photo, onClick }: PhotoCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  const cloudFrontUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+  if (!cloudFrontUrl) {
+    console.error('NEXT_PUBLIC_CLOUDFRONT_URL is not defined');
+    return null;
+  }
+
+  const imageUrl = photo.url || (photo.s3Key && `${cloudFrontUrl}/${photo.s3Key}`);
+
+  if (!imageUrl) {
+    console.error('Photo has no URL or s3Key:', photo);
+    return null;
+  }
+
+  useEffect(() => {
+    // Get image dimensions for PhotoSwipe
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      setImageDimensions({
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      });
+    };
+  }, [imageUrl]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -49,12 +75,11 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
               onClick={() => setIsModalOpen(true)}
             >
               <div className="aspect-[4/3] w-full overflow-hidden">
-                <Image
-                  src={photo.thumbnailUrl || photo.url}
+                <img
+                  src={imageUrl}
                   alt={photo.title}
-                  width={500}
-                  height={375}
-                  className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
                 />
               </div>
               <div className="absolute inset-0 bg-black bg-opacity-0 transition-opacity duration-300 group-hover:bg-opacity-10" />
@@ -116,9 +141,12 @@ export default function PhotoCard({ photo }: PhotoCardProps) {
         </CardFooter>
       </Card>
 
-      {isModalOpen && (
-        <PhotoModal
-          photo={photo}
+      {isModalOpen && imageDimensions && (
+        <PhotoModal 
+          photo={{
+            ...photo,
+            dimensions: imageDimensions
+          }}
           onClose={() => setIsModalOpen(false)}
         />
       )}

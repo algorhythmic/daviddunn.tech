@@ -20,6 +20,24 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'd3qpg5syynu736.cloudfront.net',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'daviddunn.tech.s3.us-east-2.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.s3.us-east-2.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 }

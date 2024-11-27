@@ -1,37 +1,43 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAboutContent extends Document {
-  statement: string;
-  resumeUrl: string;
-  previewImages: {
-    resume: string;
-    linkedin: string;
-    github: string;
-    instagram: string;
+  _id: string;
+  statement?: string;
+  resumeUrl?: string;
+  previewImages?: {
+    resume?: string;
+    linkedin?: string;
+    github?: string;
+    instagram?: string;
   };
-  socialLinks: {
-    linkedin: string;
-    github: string;
-    instagram: string;
+  socialLinks?: {
+    linkedin?: string;
+    github?: string;
+    instagram?: string;
   };
-  lastUpdated: Date;
+  lastUpdated?: Date;
 }
 
 const AboutContentSchema = new Schema<IAboutContent>({
-  statement: { type: String, required: true, default: '' },
-  resumeUrl: { type: String, required: true },
+  statement: { type: String },
+  resumeUrl: { type: String },
   previewImages: {
-    resume: { type: String, required: true },
-    linkedin: { type: String, required: true },
-    github: { type: String, required: true },
-    instagram: { type: String, required: true },
+    resume: { type: String },
+    linkedin: { type: String },
+    github: { type: String },
+    instagram: { type: String }
   },
   socialLinks: {
-    linkedin: { type: String, required: true },
-    github: { type: String, required: true },
-    instagram: { type: String, required: true },
+    linkedin: { type: String },
+    github: { type: String },
+    instagram: { type: String }
   },
-  lastUpdated: { type: Date, default: Date.now },
+  lastUpdated: { type: Date }
+}, {
+  strict: false // Allow additional fields
 });
+
+// Ensure indexes
+AboutContentSchema.index({ lastUpdated: -1 });
 
 export const AboutContent = mongoose.models.AboutContent || mongoose.model<IAboutContent>('AboutContent', AboutContentSchema);

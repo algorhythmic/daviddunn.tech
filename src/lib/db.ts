@@ -9,15 +9,22 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
-let cached = global.mongoose;
+declare global {
+  var mongoDb: {
+    client: any;
+    promise: Promise<any> | null;
+  };
+}
+
+let cached = global.mongoDb;
 
 if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+  cached = global.mongoDb = { client: null, promise: null };
 }
 
 export async function connectToMongoDB() {
-  if (cached.conn) {
-    return cached.conn;
+  if (cached.client) {
+    return cached.client.db();
   }
 
   if (!cached.promise) {
@@ -26,18 +33,18 @@ export async function connectToMongoDB() {
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
+      return mongoose.connection.getClient();
     });
   }
 
   try {
-    cached.conn = await cached.promise;
+    cached.client = await cached.promise;
+    return cached.client.db();
   } catch (e) {
     cached.promise = null;
+    console.error('MongoDB connection error:', e);
     throw e;
   }
-
-  return cached.conn;
 }
 
 // Supabase connection
