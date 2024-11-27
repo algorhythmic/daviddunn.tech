@@ -32,10 +32,17 @@ export interface TableOfContentsItem {
 export interface PhotoMetadata {
   width?: number;
   height?: number;
-  dateTaken?: Date;
-  camera?: string;
+  dateTaken?: string;
+  camera?: {
+    make?: string;
+    model?: string;
+  };
   lens?: string;
-  location?: string;
+  location?: {
+    name?: string;
+    latitude?: number;
+    longitude?: number;
+  };
   settings?: {
     aperture?: string;
     shutterSpeed?: string;
@@ -49,6 +56,7 @@ export interface Photo {
   title: string;
   description: string;
   url: string;
+  s3Key: string;
   thumbnailUrl?: string;
   category?: string;
   albumId?: string;
