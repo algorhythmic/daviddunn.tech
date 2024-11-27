@@ -120,10 +120,10 @@ export default async function PhotoPage({ params }: Props) {
           <h1 className="text-4xl font-bold mb-2">{photo.title}</h1>
           
           <div className="flex items-center gap-4 text-muted-foreground mb-4">
-            {photo.metadata?.location?.name && (
+            {photo.metadata?.location && (
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
-                <span>{photo.metadata.location.name}</span>
+                <span>{photo.metadata.location}</span>
               </div>
             )}
             <div className="flex items-center gap-1">
@@ -169,9 +169,29 @@ export default async function PhotoPage({ params }: Props) {
         {/* Metadata */}
         {photo.metadata && (
           <div className="mt-8 space-y-4 text-sm text-muted-foreground">
-            {photo.metadata.camera?.make && photo.metadata.camera?.model && (
+            {photo.title && (
               <div>
-                <strong>Camera:</strong> {photo.metadata.camera.make} {photo.metadata.camera.model}
+                <strong>Title:</strong> {photo.title}
+              </div>
+            )}
+            {photo.description && (
+              <div>
+                <strong>Description:</strong> {photo.description}
+              </div>
+            )}
+            {photo.metadata.location && (
+              <div>
+                <strong>Location:</strong> {photo.metadata.location}
+              </div>
+            )}
+            {photo.tags && photo.tags.length > 0 && (
+              <div>
+                <strong>Tags:</strong> {photo.tags.join(', ')}
+              </div>
+            )}
+            {photo.metadata.camera && (
+              <div>
+                <strong>Camera:</strong> {photo.metadata.camera}
               </div>
             )}
             {photo.metadata.settings && (
@@ -193,14 +213,9 @@ export default async function PhotoPage({ params }: Props) {
                 </ul>
               </div>
             )}
-            {photo.metadata.takenAt && (
+            {photo.metadata.dateTaken && (
               <div>
-                <strong>Taken:</strong> {new Date(photo.metadata.takenAt).toLocaleString()}
-              </div>
-            )}
-            {photo.metadata.location?.latitude && photo.metadata.location?.longitude && (
-              <div>
-                <strong>Location:</strong> {photo.metadata.location.latitude}, {photo.metadata.location.longitude}
+                <strong>Taken:</strong> {new Date(photo.metadata.dateTaken).toLocaleString()}
               </div>
             )}
           </div>

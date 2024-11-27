@@ -91,7 +91,7 @@ export default function SearchPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {results.map((result) => {
                 if (result.type === 'photo' && 'id' in result.item) {
-                  return <PhotoCard key={`photo-${result.item.id}`} photo={result.item as Photo} />
+                  return <PhotoCard key={`photo-${result.item.id}`} photo={result.item as unknown as Photo} />
                 }
                 if (result.type === 'blog' && 'id' in result.item) {
                   return <BlogCard key={`blog-${result.item.id}`} post={result.item as BlogPost} />
@@ -105,7 +105,7 @@ export default function SearchPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {photoResults.map((result) => (
                 'id' in result.item && 
-                <PhotoCard key={`photo-${result.item.id}`} photo={result.item as Photo} />
+                <PhotoCard key={`photo-${result.item.id}`} photo={result.item as unknown as Photo} />
               ))}
             </div>
           </TabsContent>

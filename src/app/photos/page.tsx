@@ -2,10 +2,12 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { connectToMongoDB } from '@/lib/db';
-import Photo from '@/models/mongodb/Photo';
+import Photo, { IPhoto } from '@/models/mongodb/Photo';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Image as ImageIcon, Calendar } from 'lucide-react';
+import { ObjectId } from 'mongodb';
+import type { Photo as PhotoType } from '@/types/schema';
 
 export const metadata: Metadata = {
   title: 'Photos | David Dunn',
@@ -14,28 +16,40 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600; // Revalidate every hour
 
-async function getPhotos() {
+async function getPhotos(): Promise<PhotoType[]> {
   try {
     await connectToMongoDB();
-    const photos = await Photo.find()
+    const rawPhotos = await Photo.find()
       .sort({ dateCreated: -1 })
       .lean();
 
+    // First cast to unknown, then to our specific type
+    const photos = (rawPhotos as unknown) as (IPhoto & { _id: ObjectId })[];
+    
     return photos.map(photo => {
       // Ensure we have a valid URL
       const url = photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`;
+      
+      // Ensure metadata.dateTaken is always defined
+      const metadata = {
+        dateTaken: photo.metadata?.dateTaken || photo.dateCreated,
+        camera: photo.metadata?.camera,
+        lens: photo.metadata?.lens,
+        location: photo.metadata?.location,
+        settings: photo.metadata?.settings
+      };
       
       return {
         _id: photo._id.toString(),
         title: photo.title || 'Untitled',
         description: photo.description || '',
         url,
-        s3Key: photo.s3Key,
+        thumbnailUrl: url,
+        category: 'uncategorized',
         tags: photo.tags || [],
-        metadata: photo.metadata || {},
-        location: photo.location || '',
-        dateCreated: new Date(photo.dateCreated),
-        dateUpdated: new Date(photo.dateUpdated)
+        metadata,
+        dateCreated: photo.dateCreated,
+        dateUpdated: photo.dateUpdated
       };
     });
   } catch (error) {
@@ -84,10 +98,10 @@ export default async function PhotosPage() {
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                    {photo.location && (
+                    {photo.metadata.location && (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        <span>{photo.location}</span>
+                        <span>{photo.metadata.location}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-1">
