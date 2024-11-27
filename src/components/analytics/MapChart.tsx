@@ -1,11 +1,17 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
+import L, { LatLngTuple } from 'leaflet';
 import { useTheme } from 'next-themes';
 import 'leaflet/dist/leaflet.css';
 
-const markers = [
+interface Marker {
+  name: string;
+  coordinates: LatLngTuple;
+  value: number;
+}
+
+const markers: Marker[] = [
   { name: "San Francisco", coordinates: [37.7749, -122.4194], value: 500 },
   { name: "New York", coordinates: [40.7128, -74.0060], value: 300 },
   { name: "London", coordinates: [51.5074, -0.1276], value: 200 },

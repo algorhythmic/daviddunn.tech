@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Camera, MapPin, Calendar } from 'lucide-react';
-import { Photo } from "@/models/mongodb/Photo";
+import type { Photo } from '@/types/schema';
 import Image from 'next/image';
 import PhotoModal from './PhotoModal';
 import {

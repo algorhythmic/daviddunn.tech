@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import 'photoswipe/style.css';
 import { Photo } from '@/models/mongodb/Photo';
+import PhotoSwipe from 'photoswipe';
 
 interface PhotoLightboxProps {
   photos: Photo[];
@@ -32,12 +33,14 @@ export function PhotoLightbox({ photos, initialIndex, isOpen, onClose }: PhotoLi
   useEffect(() => {
     if (!photoSwipe) return;
     
-    photoSwipe.on('change', () => {
+    const handleIndexChange = () => {
       setCurrentIndex(photoSwipe.currIndex);
-    });
+    };
+
+    photoSwipe.on('change', handleIndexChange);
 
     return () => {
-      photoSwipe.off('change');
+      photoSwipe.off('change', handleIndexChange);
     };
   }, [photoSwipe, setCurrentIndex]);
 
@@ -50,26 +53,24 @@ export function PhotoLightbox({ photos, initialIndex, isOpen, onClose }: PhotoLi
       return;
     }
 
-    import('photoswipe').then(({ default: PhotoSwipe }) => {
-      const options = {
-        index: currentIndex,
-        dataSource: photos.map((photo) => ({
-          src: `${process.env.NEXT_PUBLIC_S3_URL}/${photo.s3Key}`,
-          w: 1920,
-          h: 1080,
-          alt: photo.title || 'Photo',
-        })),
-        wheelToZoom: true,
-        closeOnVerticalDrag: false,
-        padding: { top: 20, bottom: 20, left: 20, right: 20 },
-        bgOpacity: 0.9,
-        showHideAnimationType: 'fade'
-      };
+    const options = {
+      index: currentIndex,
+      dataSource: photos.map((photo) => ({
+        src: `${process.env.NEXT_PUBLIC_S3_URL}/${photo.s3Key}`,
+        w: 1920,
+        h: 1080,
+        alt: photo.title || 'Photo',
+      })),
+      wheelToZoom: true,
+      closeOnVerticalDrag: false,
+      padding: { top: 20, bottom: 20, left: 20, right: 20 },
+      bgOpacity: 0.9,
+      showHideAnimationType: 'fade' as 'fade'
+    };
 
-      const pswp = new PhotoSwipe(options);
-      setPhotoSwipe(pswp);
-      pswp.init();
-    });
+    const pswp = new PhotoSwipe(options);
+    setPhotoSwipe(pswp);
+    pswp.init();
   }, [isOpen, photos, currentIndex, photoSwipe]);
 
   return null;

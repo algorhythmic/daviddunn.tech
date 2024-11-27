@@ -45,11 +45,9 @@ export default function BlogCard({ post }: BlogCardProps) {
             {post.excerpt}
           </p>
           <div className="flex flex-wrap gap-2">
-            {post.categories.slice(0, 2).map((category) => (
-              <Badge key={category} variant="secondary" className="capitalize">
-                {category}
-              </Badge>
-            ))}
+            <Badge variant="secondary" className="capitalize">
+              {post.category}
+            </Badge>
           </div>
         </CardContent>
         <CardFooter className="px-4 pb-4 pt-0">

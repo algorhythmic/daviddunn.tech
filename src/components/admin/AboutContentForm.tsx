@@ -118,7 +118,7 @@ export function AboutContentForm({ initialContent }: AboutContentFormProps) {
           toast({
             title: 'Warning',
             description: 'Could not delete old resume, but will continue with upload',
-            variant: 'warning',
+            variant: 'default',
           });
         }
       }
@@ -229,13 +229,22 @@ export function AboutContentForm({ initialContent }: AboutContentFormProps) {
         title: 'Success',
         description: 'Content saved successfully',
       });
-    } catch (error) {
-      console.error('Error saving content:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save content. Please try again.',
-        variant: 'destructive',
-      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error saving content:', error);
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        console.error('Unknown error saving content:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save content. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -313,7 +322,11 @@ export function AboutContentForm({ initialContent }: AboutContentFormProps) {
                 <Label className="capitalize">{key} Preview</Label>
                 <div className="flex items-center gap-4">
                   <Input
-                    ref={(el) => (previewInputRefs.current[key] = el)}
+                    ref={(el) => {
+                      if (el) {
+                        previewInputRefs.current[key] = el;
+                      }
+                    }}
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
