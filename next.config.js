@@ -1,5 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000', 'daviddunn.tech'],
+    },
+  },
+  serverExternalPackages: ['sharp'],
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
   images: {
     remotePatterns: [
       {
@@ -10,35 +23,18 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '*.streamlit.app',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'storage.googleapis.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'd3qpg5syynu736.cloudfront.net',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'daviddunn.tech.s3.us-east-2.amazonaws.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.s3.us-east-2.amazonaws.com',
+        hostname: 'd1sm5qgpqx3jlp.cloudfront.net',
         port: '',
         pathname: '/**',
       },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    // Suppress the punycode deprecation warning
+    config.ignoreWarnings = [
+      { module: /node_modules\/punycode/ },
+    ];
+    return config;
   },
 }
 
