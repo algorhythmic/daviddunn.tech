@@ -10,9 +10,9 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import { Loader2, X } from 'lucide-react';
-import { BlogPost } from '@/types/schema';
 import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 // Import MDEditor without SSR to avoid window is not defined error
 const MDEditor = dynamic(
@@ -24,7 +24,10 @@ const MDEditor = dynamic(
 );
 
 // Needed to prevent SSR issues with markdown editor
-const NoSSRWrapper = dynamic(() => Promise.resolve(({ children }) => <>{children}</>), {
+interface WrapperProps {
+  children: React.ReactNode;
+}
+const NoSSRWrapper = dynamic<WrapperProps>(() => Promise.resolve(({ children }) => <>{children}</>), {
   ssr: false
 });
 
@@ -211,10 +214,12 @@ export default function NewBlogForm() {
             />
             {imagePreview && (
               <div className="mt-4 relative w-full aspect-[2/1]">
-                <img
+                <Image
                   src={imagePreview}
                   alt="Preview"
-                  className="rounded-md object-cover w-full h-full"
+                  fill
+                  className="rounded-md object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
                 />
               </div>
             )}

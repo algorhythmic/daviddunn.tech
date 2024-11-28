@@ -140,7 +140,7 @@ export default function BlogAdmin() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete "{post.title}"? This action cannot be undone.
+                          Are you sure you want to delete &ldquo;{post.title}&rdquo;? This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

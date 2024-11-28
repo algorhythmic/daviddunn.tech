@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { AboutContentForm } from '@/components/admin/AboutContentForm';
-import { connectToMongoDB } from '@/lib/db';
+import { connectToDatabase } from '@/lib/db';
 import { AboutContent } from '@/models/about';
 import { Types } from 'mongoose';
 
@@ -29,7 +29,7 @@ type LeanAboutContent = {
 
 async function getAboutContent() {
   try {
-    await connectToMongoDB();
+    await connectToDatabase();
     const content = await AboutContent.findOne().lean() as LeanAboutContent;
     
     if (!content) {

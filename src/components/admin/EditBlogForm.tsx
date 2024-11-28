@@ -11,6 +11,7 @@ import { BlogPost } from '@/types/schema';
 import { Card, CardContent } from '@/components/ui/card';
 import MDEditor from '@uiw/react-md-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Image from 'next/image';
 
 interface EditBlogFormProps {
   post: BlogPost;
@@ -31,6 +32,7 @@ export default function EditBlogForm({ post }: EditBlogFormProps) {
     featuredImage: null as File | null,
   });
   const [tagInput, setTagInput] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -49,6 +51,7 @@ export default function EditBlogForm({ post }: EditBlogFormProps) {
     const file = e.target.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, featuredImage: file }));
+      setPreviewImage(URL.createObjectURL(file));
     }
   };
 
@@ -77,10 +80,14 @@ export default function EditBlogForm({ post }: EditBlogFormProps) {
     try {
       const submitData = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        if (key === 'tags') {
+        if (Array.isArray(value)) {
+          submitData.append(key, JSON.stringify(value));
+        } else if (value instanceof File) {
+          submitData.append(key, value);
+        } else if (typeof value === 'object' && value !== null) {
           submitData.append(key, JSON.stringify(value));
         } else if (value !== null) {
-          submitData.append(key, value);
+          submitData.append(key, String(value));
         }
       });
 
@@ -208,13 +215,26 @@ export default function EditBlogForm({ post }: EditBlogFormProps) {
           {post.featuredImage && (
             <Card className="mb-4">
               <CardContent className="p-4">
-                <img
+                <Image
                   src={post.featuredImage}
                   alt="Current featured image"
-                  className="w-full h-48 object-cover rounded-lg"
+                  fill
+                  className="object-cover rounded-lg"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
               </CardContent>
             </Card>
+          )}
+          {previewImage && (
+            <div className="relative w-full h-[200px] mb-4">
+              <Image
+                src={previewImage}
+                alt="Preview"
+                fill
+                className="object-cover rounded-lg"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            </div>
           )}
           <Input
             id="featuredImage"

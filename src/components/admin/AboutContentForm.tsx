@@ -104,20 +104,26 @@ export function AboutContentForm({ initialContent }: AboutContentFormProps) {
     if (!validateFileUpload(file, type)) return;
 
     try {
-      const path = type === 'resume' ? 'resume' : `previews/${subtype}`;
+      // Set base folders for different file types
+      const path = type === 'resume' 
+        ? 'resume' 
+        : `previews/${subtype}`;
       
-      // If uploading a new resume, delete the old one first
-      if (type === 'resume' && content.resumeUrl) {
+      // If uploading a new resume or preview, delete the old one first
+      const oldUrl = type === 'resume' 
+        ? content.resumeUrl 
+        : (subtype ? content.previewImages[subtype] : '');
+
+      if (oldUrl) {
         try {
-          console.log('Attempting to delete old resume:', content.resumeUrl);
-          await deleteFromS3(content.resumeUrl);
-          console.log('Successfully deleted old resume');
+          console.log('Attempting to delete old file:', oldUrl);
+          await deleteFromS3(oldUrl);
+          console.log('Successfully deleted old file');
         } catch (error) {
-          console.error('Error deleting old resume:', error);
-          // Show a warning toast but continue with upload
+          console.error('Error deleting old file:', error);
           toast({
             title: 'Warning',
-            description: 'Could not delete old resume, but will continue with upload',
+            description: 'Could not delete old file, but will continue with upload',
             variant: 'default',
           });
         }
@@ -129,28 +135,81 @@ export function AboutContentForm({ initialContent }: AboutContentFormProps) {
       
       if (type === 'resume') {
         setContent(prev => ({ ...prev, resumeUrl: url }));
-        console.log('Updated resume URL in state');
+        console.log('Updated resume URL in state:', url);
       } else if (subtype) {
         setContent(prev => {
           const updatedPreviewImages = {
             ...prev.previewImages,
-            [subtype as PreviewType]: url
+            [subtype]: url
           };
+          console.log('Updated preview images in state:', updatedPreviewImages);
           return {
             ...prev,
             previewImages: updatedPreviewImages
           };
         });
-        console.log('Updated preview image URL in state');
       }
       
-      setIsDirty(true);
+      // Immediately submit the form after successful upload
+      const formData = new FormData();
+      formData.append('statement', content.statement);
+      formData.append('resumeUrl', type === 'resume' ? url : content.resumeUrl);
+      
+      // Add preview images
+      const previewImages = type === 'preview' && subtype
+        ? { ...content.previewImages, [subtype]: url }
+        : content.previewImages;
+      
+      Object.entries(previewImages).forEach(([key, value]) => {
+        formData.append(`previewImages[${key}]`, value);
+      });
+      
+      // Add social links
+      Object.entries(content.socialLinks).forEach(([key, value]) => {
+        formData.append(`socialLinks[${key}]`, value);
+      });
+
+      console.log('Submitting updated data after file upload:', Object.fromEntries(formData));
+
+      const response = await fetch('/api/admin/about', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to save content');
+      }
+
+      console.log('Server response after file upload:', responseData);
+
+      if (responseData.content) {
+        setContent({
+          statement: responseData.content.statement || '',
+          resumeUrl: responseData.content.resumeUrl || '',
+          previewImages: {
+            resume: responseData.content.previewImages?.resume || '',
+            linkedin: responseData.content.previewImages?.linkedin || '',
+            github: responseData.content.previewImages?.github || '',
+            instagram: responseData.content.previewImages?.instagram || '',
+          },
+          socialLinks: {
+            linkedin: responseData.content.socialLinks?.linkedin || '',
+            github: responseData.content.socialLinks?.github || '',
+            instagram: responseData.content.socialLinks?.instagram || '',
+          },
+        });
+      }
+
+      router.refresh();
+      setIsDirty(false);
       toast({
         title: 'Success',
-        description: 'File uploaded successfully',
+        description: 'File uploaded and content saved successfully',
       });
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Error handling file upload:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to upload file. Please try again.',
@@ -188,41 +247,56 @@ export function AboutContentForm({ initialContent }: AboutContentFormProps) {
     }
 
     try {
-      // Prepare the data for submission
-      const submissionData = {
-        statement: content.statement,
-        resumeUrl: content.resumeUrl,
-        previewImages: {
-          resume: content.previewImages.resume,
-          linkedin: content.previewImages.linkedin,
-          github: content.previewImages.github,
-          instagram: content.previewImages.instagram,
-        },
-        socialLinks: {
-          linkedin: content.socialLinks.linkedin,
-          github: content.socialLinks.github,
-          instagram: content.socialLinks.instagram,
-        }
-      };
+      // Create FormData instance
+      const formData = new FormData();
+      formData.append('statement', content.statement);
+      formData.append('resumeUrl', content.resumeUrl);
+      
+      // Add preview images
+      Object.entries(content.previewImages).forEach(([key, value]) => {
+        formData.append(`previewImages[${key}]`, value);
+      });
+      
+      // Add social links
+      Object.entries(content.socialLinks).forEach(([key, value]) => {
+        formData.append(`socialLinks[${key}]`, value);
+      });
 
-      console.log('Submitting data:', submissionData); // Debug log
+      console.log('Submitting data:', Object.fromEntries(formData)); // Debug log
 
       const response = await fetch('/api/admin/about', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submissionData),
+        body: formData,
       });
 
       const responseData = await response.json();
 
       if (!response.ok) {
         console.error('Server response:', responseData); // Debug log
-        throw new Error(responseData.details || 'Failed to save content');
+        throw new Error(responseData.error || 'Failed to save content');
       }
 
       console.log('Server response:', responseData); // Debug log
 
-      setContent(responseData);
+      // Update the local state with the response data
+      if (responseData.content) {
+        setContent({
+          statement: responseData.content.statement || '',
+          resumeUrl: responseData.content.resumeUrl || '',
+          previewImages: {
+            resume: responseData.content.previewImages?.resume || '',
+            linkedin: responseData.content.previewImages?.linkedin || '',
+            github: responseData.content.previewImages?.github || '',
+            instagram: responseData.content.previewImages?.instagram || '',
+          },
+          socialLinks: {
+            linkedin: responseData.content.socialLinks?.linkedin || '',
+            github: responseData.content.socialLinks?.github || '',
+            instagram: responseData.content.socialLinks?.instagram || '',
+          },
+        });
+      }
+
       router.refresh();
       setIsDirty(false);
       toast({
