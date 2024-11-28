@@ -1,4 +1,5 @@
 {
+  "root": true,
   "extends": [
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended"
@@ -15,5 +16,31 @@
     "jsx-a11y/alt-text": "warn",
     "no-var": "error",
     "prefer-const": "error"
+  },
+  "parserOptions": {
+    "ecmaVersion": 2024,
+    "sourceType": "module",
+    "project": "./tsconfig.json",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "out/",
+    "public/",
+    "*.config.js",
+    "*.config.ts"
+  ],
+  "env": {
+    "browser": true,
+    "es2024": true,
+    "node": true
   }
 }
