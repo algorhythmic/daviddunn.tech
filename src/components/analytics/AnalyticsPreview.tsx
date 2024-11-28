@@ -70,7 +70,7 @@ export function AnalyticsPreview() {
               <CardTitle className="text-xs font-medium">Visitor Locations</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="h-[120px]">
+              <div className="h-[120px] relative">
                 <MapChart />
               </div>
             </CardContent>

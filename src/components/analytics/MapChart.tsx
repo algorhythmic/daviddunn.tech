@@ -32,7 +32,13 @@ const MapComponent = () => {
     require('leaflet/dist/leaflet.css');
 
     if (!mapRef.current) {
-      const instance = L.map('map').setView([20, 0], 2);
+      const instance = L.map('map', {
+        scrollWheelZoom: false, // Disable scroll wheel zoom
+        dragging: false, // Disable dragging
+        zoomControl: false, // Remove zoom controls
+        minZoom: 1, // Set minimum zoom level
+        maxZoom: 1 // Set maximum zoom level to match minimum for fixed zoom
+      }).setView([20, 0], 1); // Set initial zoom to 1 (most zoomed out)
       
       L.tileLayer(theme === 'dark' ? DARK_THEME : LIGHT_THEME, {
         attribution: theme === 'dark' 
@@ -82,7 +88,11 @@ const MapComponent = () => {
     }
   }, [theme, map]);
 
-  return <div id="map" className="w-full h-[400px] rounded-lg" />;
+  return (
+    <div className="relative w-full h-full">
+      <div id="map" className="absolute inset-0 rounded-lg overflow-hidden" />
+    </div>
+  );
 };
 
 // Dynamically import the Map component with no SSR
