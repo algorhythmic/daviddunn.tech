@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -17,10 +18,10 @@ const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
 
 export async function GET(
   request: NextRequest,
-  context: { params: { slug: string } }
 ): Promise<NextResponse> {
   try {
-    const slug = await context.params.slug;
+    const { slug } = request.nextUrl.pathname.match(/\/blog\/(?<slug>[^/]+)/)?.groups ?? {};
+    
     if (!slug) {
       return NextResponse.json(
         { error: 'Invalid slug' },
@@ -32,15 +33,18 @@ export async function GET(
     const session = await getServerSession(authOptions);
     const isAdmin = !!session?.user;
 
-    const { db } = await connectToDatabase();
-    
+    const db = await connectToDatabase();
+    if (!db) {
+      throw new Error('Failed to connect to database');
+    }
+
     // Build query based on authentication status
-    const query: Record<string, any> = { slug };
+    const query: { [key: string]: string } = { slug };
     if (!isAdmin) {
       query.status = 'published';
     }
     
-    const post = await db.collection('posts').findOne(query);
+    const post = await db.connection.db.collection('posts').findOne(query);
 
     if (!post) {
       return NextResponse.json(
@@ -61,7 +65,6 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { slug: string } }
 ): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
@@ -72,12 +75,15 @@ export async function PUT(
       );
     }
 
-    const slug = await context.params.slug;
+    const { slug } = request.nextUrl.pathname.match(/\/blog\/(?<slug>[^/]+)/)?.groups ?? {};
     const formData = await request.formData();
-    const { db } = await connectToDatabase();
+    const db = await connectToDatabase();
+    if (!db) {
+      throw new Error('Failed to connect to database');
+    }
 
     // Find the existing post
-    const existingPost = await db.collection('posts').findOne({ slug });
+    const existingPost = await db.connection.db.collection('posts').findOne({ slug });
     if (!existingPost) {
       return NextResponse.json(
         { error: 'Blog post not found' },
@@ -97,7 +103,7 @@ export async function PUT(
 
     // If slug is being changed, check if new slug is available
     if (newSlug !== slug) {
-      const slugExists = await db.collection('posts').findOne({ 
+      const slugExists = await db.connection.db.collection('posts').findOne({ 
         slug: newSlug,
         _id: { $ne: existingPost._id } 
       });
@@ -110,13 +116,25 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: {
+      title: string;
+      slug: string;
+      content: string;
+      excerpt: string;
+      category: string;
+      status: string;
+      published: boolean;
+      tags: string[];
+      updatedAt: Date;
+      featuredImage?: string;
+    } = {
       title,
       slug: newSlug,
       content,
       excerpt,
       category,
       status,
+      published: status === 'published',
       tags,
       updatedAt: new Date(),
     };
@@ -139,7 +157,7 @@ export async function PUT(
     }
 
     // Update the post
-    const result = await db.collection('posts').updateOne(
+    const result = await db.connection.db.collection('posts').updateOne(
       { slug },
       { $set: updateData }
     );
@@ -163,7 +181,6 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { slug: string } }
 ): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
@@ -174,11 +191,14 @@ export async function DELETE(
       );
     }
 
-    const slug = await context.params.slug;
-    const { db } = await connectToDatabase();
+    const { slug } = request.nextUrl.pathname.match(/\/blog\/(?<slug>[^/]+)/)?.groups ?? {};
+    const db = await connectToDatabase();
+    if (!db) {
+      throw new Error('Failed to connect to database');
+    }
 
     // Find the post to get its featured image key
-    const post = await db.collection('posts').findOne({ slug });
+    const post = await db.connection.db.collection('posts').findOne({ slug });
     if (!post) {
       return NextResponse.json(
         { error: 'Blog post not found' },
@@ -187,7 +207,7 @@ export async function DELETE(
     }
 
     // Delete the post from MongoDB
-    const result = await db.collection('posts').deleteOne({ slug });
+    const result = await db.connection.db.collection('posts').deleteOne({ slug });
     if (result.deletedCount === 0) {
       return NextResponse.json(
         { error: 'Failed to delete blog post' },

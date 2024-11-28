@@ -1,12 +1,11 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import MarkdownRenderer from '@/components/blog/MarkdownRenderer';
 import { BlogPost } from '@/types/schema';
 
-interface Props {
-  params: {
-    slug: string;
-  };
+interface PageParams {
+  slug: string;
 }
 
 async function getBlogPost(slug: string) {
@@ -32,24 +31,31 @@ async function getBlogPost(slug: string) {
 }
 
 export async function generateMetadata(
-  { params }: Props,
-  parent: Promise<Metadata>
+  { params }: { params: Promise<PageParams> }
 ): Promise<Metadata> {
-  // Wait for the parent metadata
-  const previousMetadata = await parent;
-
-  const post = await getBlogPost(params.slug);
-  if (!post) return previousMetadata;
+  const resolvedParams = await params;
+  const post = await getBlogPost(resolvedParams.slug);
+  
+  if (!post) {
+    return {
+      title: 'Blog Post Not Found',
+      description: 'The requested blog post could not be found.'
+    };
+  }
 
   return {
-    ...previousMetadata,
     title: post.seoTitle || post.title,
     description: post.seoDescription || post.excerpt,
   };
 }
 
-export default async function BlogPostPage({ params }: Props) {
-  const post = await getBlogPost(params.slug);
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<PageParams>;
+}) {
+  const resolvedParams = await params;
+  const post = await getBlogPost(resolvedParams.slug);
   if (!post) notFound();
 
   return (
@@ -72,11 +78,15 @@ export default async function BlogPostPage({ params }: Props) {
             ))}
           </div>
           {post.featuredImage && (
-            <img
-              src={post.featuredImage}
-              alt={post.title}
-              className="w-full h-[400px] object-cover rounded-lg mb-8"
-            />
+            <div className="relative w-full h-[400px] mb-8">
+              <Image
+                src={post.featuredImage}
+                alt={post.title}
+                fill
+                className="object-cover rounded-lg"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            </div>
           )}
           <p className="text-lg text-muted-foreground mb-4">{post.excerpt}</p>
           <div className="flex items-center text-sm text-muted-foreground">

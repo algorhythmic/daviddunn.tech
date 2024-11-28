@@ -8,6 +8,7 @@ import remarkToc from 'remark-toc';
 import rehypeSlug from 'rehype-slug';
 import rehypeHighlight from 'rehype-highlight';
 import cn from 'classnames';
+import Image from 'next/image';
 
 interface CodeBlockProps {
   language: string;
@@ -84,13 +85,19 @@ const MarkdownRenderer = ({ content, className }: { content: string; className?:
       return <ol className="list-decimal pl-6 my-4">{props.children}</ol>;
     },
     img(props: { src?: string; alt?: string }) {
+      if (!props.src) return null;
+      
       return (
-        <img
-          src={props.src}
-          alt={props.alt || ''}
-          className="rounded-lg w-full max-h-[600px] object-cover"
-          loading="lazy"
-        />
+        <div className="relative w-full aspect-[16/9]">
+          <Image
+            src={props.src}
+            alt={props.alt || ''}
+            fill
+            className="rounded-lg object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
+            priority={false}
+          />
+        </div>
       );
     },
   };
