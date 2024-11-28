@@ -2,7 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import { DefaultSession, DefaultUser } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
-import { connectToDatabase } from './mongodb';
+import { connectToDatabase } from './db';
 
 // Extend the User type
 declare module 'next-auth' {
@@ -33,8 +33,12 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const { db } = await connectToDatabase();
-          const user = await db.collection('users').findOne({ email: credentials.email });
+          const db = await connectToDatabase();
+          if (!db) {
+            throw new Error('Failed to connect to database');
+          }
+
+          const user = await db.connection.db.collection('users').findOne({ email: credentials.email });
 
           if (!user) {
             throw new Error('No user found with this email');
