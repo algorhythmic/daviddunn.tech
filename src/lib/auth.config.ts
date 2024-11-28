@@ -49,13 +49,10 @@ export const authOptions: AuthOptions = {
               email: process.env.ADMIN_EMAIL,
             };
           }
-
-          throw new Error('CredentialsSignin');
+          return null;
         } catch (error) {
-          if (error instanceof Error) {
-            throw error;
-          }
-          throw new Error('CredentialsSignin');
+          console.error('Auth error:', error);
+          throw error;
         }
       }
     })
@@ -66,18 +63,7 @@ export const authOptions: AuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
-  cookies: {
-    sessionToken: {
-      name: 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -88,9 +74,11 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
+        session.user.id = token.id as string;
       }
       return session;
     },
   },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 };

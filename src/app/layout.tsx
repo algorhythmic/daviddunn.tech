@@ -23,8 +23,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  auth,
 }: {
   children: React.ReactNode;
+  auth: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -36,7 +38,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <RootLayoutClient>{children}</RootLayoutClient>
+            <RootLayoutClient>
+              {auth}
+              {children}
+            </RootLayoutClient>
             <Toaster />
           </ThemeProvider>
         </AuthProvider>

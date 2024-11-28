@@ -5,10 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', {
+export function formatDate(date: Date | string | null): string {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  }).format(new Date(date));
+  });
 }
