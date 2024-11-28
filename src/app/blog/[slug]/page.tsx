@@ -21,7 +21,10 @@ async function getBlogPost(slug: string) {
       throw new Error('Failed to fetch blog post');
     }
     const data = await response.json();
-    return data.post as BlogPost;
+    return {
+      ...data.post,
+      _id: data.post._id.toString()
+    } as BlogPost;
   } catch (error) {
     console.error('Error fetching blog post:', error);
     return null;

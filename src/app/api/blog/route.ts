@@ -52,7 +52,10 @@ export async function GET(request: Request) {
       console.log(`Found ${posts.length} posts`);
 
       return NextResponse.json({
-        posts,
+        posts: posts.map(post => ({
+          ...post,
+          _id: post._id.toString()
+        })),
         pagination: {
           currentPage: page,
           totalPages,

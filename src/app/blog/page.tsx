@@ -22,7 +22,10 @@ async function getBlogPosts() {
       .toArray();
 
     console.log(`Found ${posts.length} published posts`);
-    return posts as BlogPost[];
+    return posts.map(post => ({
+      ...post,
+      _id: post._id.toString()
+    })) as BlogPost[];
   } catch (error) {
     console.error('Error fetching blog posts:', error);
     return [];
