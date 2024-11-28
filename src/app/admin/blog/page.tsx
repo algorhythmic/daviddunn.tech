@@ -15,13 +15,17 @@ export default function BlogAdmin() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch('/api/blog');
-        if (!response.ok) throw new Error('Failed to fetch blog posts');
+        // Fetch all posts (both draft and published) for admin view
+        const response = await fetch('/api/blog?status=all');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch blog posts');
+        }
         const data = await response.json();
         setPosts(data.posts);
       } catch (error) {
         console.error('Error fetching blog posts:', error);
-        setError('Failed to load blog posts');
+        setError(error instanceof Error ? error.message : 'Failed to load blog posts');
       } finally {
         setLoading(false);
       }
@@ -60,7 +64,7 @@ export default function BlogAdmin() {
           <Card key={post._id.toString()}>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <Link href={`/admin/blog/${post._id}`}>
+                <Link href={`/blog/${post.slug}`}>
                   <CardTitle className="text-xl hover:text-primary">
                     {post.title}
                   </CardTitle>
@@ -80,7 +84,7 @@ export default function BlogAdmin() {
                   Last updated {new Date(post.updatedAt).toLocaleDateString()}
                 </div>
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`/admin/blog/${post._id}`}>
+                  <Link href={`/admin/blog/${post.slug}`}>
                     Edit
                   </Link>
                 </Button>
