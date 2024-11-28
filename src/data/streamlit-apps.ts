@@ -13,7 +13,7 @@ export const streamlitApps: StreamlitApp[] = [
         id: 'pretty-maps',
         title: 'Pretty Maps',
         description: 'Create beautiful map art using OpenStreetMap data. Customize colors, styles, and export high-resolution images.',
-        imageUrl: 'https://prettymapp.streamlit.app/~/+/media/f2904a46eab6de9fc13783e3582406cf7024b34f42dcb721c4cfc506.png',
+        imageUrl: 'https://prettymapp.streamlit.app/~/+/media/a91d9de28acb342890d636728904dcf2a1779591749f969e08a56822.png',
         appUrl: 'https://prettymapp.streamlit.app/',
         category: 'infographics',
         tags: ['maps', 'visualization', 'art']

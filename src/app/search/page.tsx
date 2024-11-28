@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { IPhoto, BlogPost } from '@/types/schema'
 import PhotoCard from '@/components/PhotoCard'
 import BlogCard from '@/components/BlogCard'
@@ -14,7 +14,7 @@ interface SearchResult {
   item: IPhoto | BlogPost
 }
 
-export default function SearchPage() {
+function SearchResults() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -124,6 +124,17 @@ export default function SearchPage() {
           No results found for &quot;{query}&quot;
         </p>
       )}
+    </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Search</h1>
+      <Suspense fallback={<div>Loading search...</div>}>
+        <SearchResults />
+      </Suspense>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToMongoDB } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db'
 import Photo from '@/models/mongodb/Photo'
 import BlogPost from '@/models/mongodb/BlogPost'
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    await connectToMongoDB()
+    await connectToDatabase()
 
     // Search through photos
     const photos = await Photo.find({
