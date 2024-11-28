@@ -6,14 +6,32 @@ const blogPostSchema = new Schema<BlogPost>({
   slug: { type: String, required: true, unique: true },
   content: { type: String, required: true },
   excerpt: { type: String, required: true },
-  author: { type: String, required: true },
   publishedAt: { type: Date, required: true },
   updatedAt: { type: Date, required: true },
-  categories: [{ type: String, required: true }],
+  category: { type: String, required: true },
   tags: [{ type: String, required: true }],
   readingTime: { type: Number, required: true },
   status: { type: String, enum: ['draft', 'published'], required: true },
   featuredImage: { type: String },
+  seoTitle: { type: String },
+  seoDescription: { type: String },
+  tableOfContents: {
+    type: {
+      items: [{
+        title: { type: String, required: true },
+        url: { type: String, required: true },
+        items: {
+          type: [{
+            title: { type: String, required: true },
+            url: { type: String, required: true },
+            items: [{ type: Schema.Types.Mixed }]
+          }],
+          required: false
+        }
+      }]
+    },
+    required: false
+  }
 }, {
   timestamps: true,
 });
@@ -21,7 +39,7 @@ const blogPostSchema = new Schema<BlogPost>({
 // Create indexes for better query performance
 blogPostSchema.index({ slug: 1 });
 blogPostSchema.index({ publishedAt: -1 });
-blogPostSchema.index({ categories: 1 });
+blogPostSchema.index({ category: 1 });
 blogPostSchema.index({ tags: 1 });
 
 export default mongoose.models.BlogPost || mongoose.model<BlogPost>('BlogPost', blogPostSchema);

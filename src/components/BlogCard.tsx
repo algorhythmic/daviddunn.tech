@@ -13,6 +13,10 @@ interface BlogCardProps {
 }
 
 export default function BlogCard({ post }: BlogCardProps) {
+  const tags = post.tags || [];
+  const readingTime = post.readingTime || 5;
+  const category = post.category || 'Uncategorized';
+
   return (
     <Link href={`/blog/${post.slug}`}>
       <Card className="h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -24,6 +28,7 @@ export default function BlogCard({ post }: BlogCardProps) {
                 alt={post.title}
                 fill
                 className="object-cover"
+                priority={false}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             </div>
@@ -37,7 +42,7 @@ export default function BlogCard({ post }: BlogCardProps) {
             </div>
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              <span>{post.readingTime} min read</span>
+              <span>{readingTime} min read</span>
             </div>
           </div>
           <h3 className="text-xl font-semibold mb-2 line-clamp-2">{post.title}</h3>
@@ -46,22 +51,24 @@ export default function BlogCard({ post }: BlogCardProps) {
           </p>
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="capitalize">
-              {post.category}
+              {category}
             </Badge>
           </div>
         </CardContent>
-        <CardFooter className="px-4 pb-4 pt-0">
-          <div className="flex flex-wrap gap-2">
-            {post.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="outline" className="capitalize">
-                {tag}
-              </Badge>
-            ))}
-            {post.tags.length > 3 && (
-              <Badge variant="outline">+{post.tags.length - 3}</Badge>
-            )}
-          </div>
-        </CardFooter>
+        {tags.length > 0 && (
+          <CardFooter className="px-4 pb-4 pt-0">
+            <div className="flex flex-wrap gap-2">
+              {tags.slice(0, 3).map((tag) => (
+                <Badge key={tag} variant="outline" className="capitalize">
+                  {tag}
+                </Badge>
+              ))}
+              {tags.length > 3 && (
+                <Badge variant="outline">+{tags.length - 3}</Badge>
+              )}
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </Link>
   );

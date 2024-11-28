@@ -83,6 +83,16 @@ const MarkdownRenderer = ({ content, className }: { content: string; className?:
     ol(props: ComponentType) {
       return <ol className="list-decimal pl-6 my-4">{props.children}</ol>;
     },
+    img(props: { src?: string; alt?: string }) {
+      return (
+        <img
+          src={props.src}
+          alt={props.alt || ''}
+          className="rounded-lg w-full max-h-[600px] object-cover"
+          loading="lazy"
+        />
+      );
+    },
   };
 
   return (

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import BlogCard from '@/components/BlogCard';
 import { BlogPost } from '@/types/schema';
+import { connectToDatabase } from '@/lib/mongodb';
 
 export const metadata: Metadata = {
   title: 'Blog | David Dunn',
@@ -8,12 +9,24 @@ export const metadata: Metadata = {
 };
 
 async function getBlogPosts() {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/blog`, {
-    next: { revalidate: 3600 }, // Revalidate every hour
-  });
-  if (!response.ok) throw new Error('Failed to fetch blog posts');
-  const data = await response.json();
-  return data.posts as BlogPost[];
+  try {
+    console.log('Fetching blog posts...');
+    const { db } = await connectToDatabase();
+    
+    const posts = await db.collection('posts')
+      .find({ 
+        status: 'published',
+        publishedAt: { $ne: null }
+      })
+      .sort({ publishedAt: -1 })
+      .toArray();
+
+    console.log(`Found ${posts.length} published posts`);
+    return posts as BlogPost[];
+  } catch (error) {
+    console.error('Error fetching blog posts:', error);
+    return [];
+  }
 }
 
 export default async function BlogPage() {
@@ -35,11 +48,15 @@ export default async function BlogPage() {
           </a> for updates.
         </p>
 
-        <div className="grid gap-8">
-          {posts.map((post) => (
-            <BlogCard key={post._id.toString()} post={post} />
-          ))}
-        </div>
+        {posts.length === 0 ? (
+          <p className="text-muted-foreground">No blog posts available yet.</p>
+        ) : (
+          <div className="space-y-8">
+            {posts.map((post) => (
+              <BlogCard key={post._id.toString()} post={post} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
