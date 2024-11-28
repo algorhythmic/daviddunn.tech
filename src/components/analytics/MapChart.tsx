@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import L, { LatLngTuple } from 'leaflet';
 import { useTheme } from 'next-themes';
-import 'leaflet/dist/leaflet.css';
+import dynamic from 'next/dynamic';
 
 interface Marker {
   name: string;
-  coordinates: LatLngTuple;
+  coordinates: [number, number];
   value: number;
 }
 
@@ -19,93 +18,76 @@ const markers: Marker[] = [
 ];
 
 const LIGHT_THEME = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const DARK_THEME = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const DARK_THEME = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png';
 
-function useMap(containerId: string) {
-  const mapRef = useRef<L.Map | null>(null);
-  const [isReady, setIsReady] = useState(false);
+const MapComponent = () => {
+  const mapRef = useRef<any>(null);
   const { theme } = useTheme();
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const [map, setMap] = useState<any>(null);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const L = require('leaflet');
+    require('leaflet/dist/leaflet.css');
+
     if (!mapRef.current) {
-      const map = L.map(containerId, {
-        center: [20, 0],
-        zoom: 1,
-        zoomControl: false,
-        attributionControl: false,
-        dragging: false,
-        scrollWheelZoom: false,
-        doubleClickZoom: false,
+      const instance = L.map('map').setView([20, 0], 2);
+      
+      L.tileLayer(theme === 'dark' ? DARK_THEME : LIGHT_THEME, {
+        attribution: theme === 'dark' 
+          ? '&copy; <a href="https://carto.com/">CARTO</a>'
+          : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18,
+      }).addTo(instance);
+
+      markers.forEach(marker => {
+        L.circle(marker.coordinates, {
+          color: theme === 'dark' ? '#fff' : '#000',
+          fillColor: theme === 'dark' ? '#fff' : '#000',
+          fillOpacity: 0.5,
+          radius: marker.value * 100
+        }).addTo(instance)
+         .bindPopup(`${marker.name}: ${marker.value} visits`);
       });
 
-      tileLayerRef.current = L.tileLayer(theme === 'dark' ? DARK_THEME : LIGHT_THEME, {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 2,
-        minZoom: 1
-      }).addTo(map);
-
-      markers.forEach(({ name, coordinates, value }) => {
-        const circle = L.circleMarker(coordinates, {
-          radius: 4,
-          fillColor: "#10b981", // Tailwind emerald-500
-          color: "#059669", // Tailwind emerald-600
-          weight: 2,
-          opacity: 0.8,
-          fillOpacity: 0.6
-        }).addTo(map);
-
-        circle.bindPopup(`${name}: ${value} visitors`);
-      });
-
-      mapRef.current = map;
-      setIsReady(true);
+      setMap(instance);
+      mapRef.current = instance;
     }
 
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
-        tileLayerRef.current = null;
       }
     };
-  }, [containerId, theme]); // Added theme to dependencies
-
-  // Update tile layer when theme changes
-  useEffect(() => {
-    if (mapRef.current && tileLayerRef.current) {
-      tileLayerRef.current.remove();
-      tileLayerRef.current = L.tileLayer(theme === 'dark' ? DARK_THEME : LIGHT_THEME, {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 2,
-        minZoom: 1
-      }).addTo(mapRef.current);
-    }
   }, [theme]);
 
-  return isReady;
-}
+  useEffect(() => {
+    if (map) {
+      const tileLayer = L.tileLayer(theme === 'dark' ? DARK_THEME : LIGHT_THEME, {
+        attribution: theme === 'dark' 
+          ? '&copy; <a href="https://carto.com/">CARTO</a>'
+          : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18,
+      });
 
-export function MapChart() {
-  const containerId = 'map';
-  const isMapReady = useMap(containerId);
-  const { theme } = useTheme();
+      map.eachLayer((layer: any) => {
+        if (layer instanceof L.TileLayer) {
+          map.removeLayer(layer);
+        }
+      });
 
-  return (
-    <div 
-      id={containerId} 
-      style={{ 
-        height: '100px', 
-        width: '100%', 
-        background: theme === 'dark' ? '#242424' : '#f8f9fa',
-        minHeight: '100px'
-      }}
-    >
-      {!isMapReady && (
-        <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-          Loading map...
-        </div>
-      )}
-    </div>
-  );
-}
+      tileLayer.addTo(map);
+    }
+  }, [theme, map]);
+
+  return <div id="map" className="w-full h-[400px] rounded-lg" />;
+};
+
+// Dynamically import the Map component with no SSR
+const MapChart = dynamic(() => Promise.resolve(MapComponent), {
+  ssr: false,
+});
+
+export default MapChart;

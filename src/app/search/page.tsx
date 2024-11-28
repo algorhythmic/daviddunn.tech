@@ -90,11 +90,11 @@ export default function SearchPage() {
           <TabsContent value="all">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {results.map((result) => {
-                if (result.type === 'photo' && 'id' in result.item) {
-                  return <PhotoCard key={`photo-${result.item.id}`} photo={result.item as unknown as IPhoto} />
+                if (result.type === 'photo' && '_id' in result.item) {
+                  return <PhotoCard key={`photo-${result.item._id}`} photo={result.item as unknown as IPhoto} />
                 }
-                if (result.type === 'blog' && 'id' in result.item) {
-                  return <BlogCard key={`blog-${result.item.id}`} post={result.item as BlogPost} />
+                if (result.type === 'blog' && '_id' in result.item) {
+                  return <BlogCard key={`blog-${result.item._id}`} post={result.item as BlogPost} />
                 }
                 return null
               })}
@@ -104,8 +104,8 @@ export default function SearchPage() {
           <TabsContent value="photos">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {photoResults.map((result) => (
-                'id' in result.item && 
-                <PhotoCard key={`photo-${result.item.id}`} photo={result.item as unknown as IPhoto} />
+                '_id' in result.item && 
+                <PhotoCard key={`photo-${result.item._id}`} photo={result.item as unknown as IPhoto} />
               ))}
             </div>
           </TabsContent>
@@ -113,8 +113,8 @@ export default function SearchPage() {
           <TabsContent value="blog">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {blogResults.map((result) => (
-                'id' in result.item && 
-                <BlogCard key={`blog-${result.item.id}`} post={result.item as BlogPost} />
+                '_id' in result.item && 
+                <BlogCard key={`blog-${result.item._id}`} post={result.item as BlogPost} />
               ))}
             </div>
           </TabsContent>

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { LineChart } from './LineChart';
-import { MapChart } from './MapChart';
+import MapChart from './MapChart';
 
 export function AnalyticsPreview() {
   return (
