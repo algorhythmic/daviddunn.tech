@@ -7,12 +7,13 @@ export interface BlogPost {
   slug: string;
   content: string;
   excerpt: string;
-  publishedAt: Date;
+  publishedAt: Date | null;
   updatedAt: Date;
   category: string;
   tags: string[];
   readingTime: number;
   status: 'draft' | 'published';
+  published: boolean;
   featuredImage?: string;
   // SEO metadata
   seoTitle?: string;
@@ -102,4 +103,18 @@ export interface AppAnalytics {
     metadata?: Record<string, string | number | boolean>;
   };
   timestamp: Date;
+}
+
+export interface AnalyticsApp {
+  _id?: string;
+  title: string;
+  description: string;
+  icon: string;
+  url: string;
+  status: 'online' | 'offline' | 'maintenance';
+  category: string;
+  tags: string[];
+  lastChecked: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
