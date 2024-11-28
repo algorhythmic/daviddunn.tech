@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db';
+import { ObjectId } from 'mongodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
-import { connectToMongoDB } from '@/lib/db';
-import { deletePhotoFromS3 } from '@/lib/s3';
-import { ObjectId } from 'mongodb';
+import { deleteObject } from '@/lib/s3';
 
 export async function GET(
   request: NextRequest,
@@ -11,76 +11,21 @@ export async function GET(
   try {
     const { slug } = request.nextUrl.pathname.match(/\/photos\/(?<slug>[^/]+)/)?.groups ?? {};
     
-    if (!ObjectId.isValid(slug)) {
-      throw new Error('Invalid photo ID');
-    }
-
-    const db = await connectToMongoDB();
-    const photos = db.collection('photos');
-
-    const photo = await photos.findOne({ _id: new ObjectId(slug) });
-    if (!photo) {
-      throw new Error('Photo not found');
-    }
-
-    // Use ES2023 object property shorthand
-    return NextResponse.json({
-      photo: {
-        _id: photo._id.toString(),
-        title: photo.title,
-        description: photo.description,
-        url: photo.url,
-        tags: photo.tags?.toSorted() ?? [], // ES2023 toSorted() method
-        metadata: photo.metadata,
-        dateCreated: photo.dateCreated,
-        dateUpdated: photo.dateUpdated
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching photo:', error);
-    
-    // ES2023 error cause property
-    const errorResponse = {
-      message: error instanceof Error ? error.message : 'Failed to fetch photo',
-      cause: error instanceof Error ? error.cause : undefined
-    };
-
-    return NextResponse.json(
-      { error: errorResponse },
-      { 
-        status: error instanceof Error && error.message === 'Photo not found' ? 404 : 
-                error instanceof Error && error.message === 'Invalid photo ID' ? 400 : 
-                500 
-      }
-    );
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-): Promise<NextResponse> {
-  const { slug } = request.nextUrl.pathname.match(/\/photos\/(?<slug>[^/]+)/)?.groups ?? {};
-  const warnings: string[] = [];
-  
-  try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    if (!ObjectId.isValid(slug)) {
+    if (!slug || !ObjectId.isValid(slug)) {
       return NextResponse.json(
         { error: 'Invalid photo ID' },
         { status: 400 }
       );
     }
 
-    const db = await connectToMongoDB();
-    const photos = db.collection('photos');
+    const db = await connectToDatabase();
+    const photos = db.connection.db.collection('photos');
 
-    // Find the photo first to get the S3 key
-    const photo = await photos.findOne({ _id: new ObjectId(slug) });
+    const photo = await photos.findOne(
+      { _id: new ObjectId(slug) },
+      { maxTimeMS: 5000 } // Set a 5-second timeout for the query
+    );
+
     if (!photo) {
       return NextResponse.json(
         { error: 'Photo not found' },
@@ -88,20 +33,95 @@ export async function DELETE(
       );
     }
 
-    // Try to delete from S3 if key exists
-    if (photo.s3Key) {
-      try {
-        await deletePhotoFromS3(photo.s3Key);
-      } catch (error) {
-        console.error('Error deleting photo from S3:', error);
-        warnings.push('Failed to delete photo from S3 storage, but metadata was removed');
+    return NextResponse.json({
+      photo: {
+        _id: photo._id.toString(),
+        title: photo.title,
+        description: photo.description,
+        url: photo.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${photo.s3Key}`,
+        s3Key: photo.s3Key,
+        thumbnailUrl: photo.thumbnailUrl,
+        category: photo.category,
+        camera: photo.camera,
+        lens: photo.lens,
+        tags: photo.tags?.sort() ?? [],
+        location: photo.location,
+        dateTaken: photo.dateTaken instanceof Date ? photo.dateTaken.toISOString() : photo.dateTaken,
+        dateUploaded: photo.dateUploaded instanceof Date ? photo.dateUploaded.toISOString() : photo.dateUploaded,
+        width: photo.width,
+        height: photo.height,
+        aperture: photo.aperture,
+        shutterSpeed: photo.shutterSpeed,
+        iso: photo.iso,
+        focalLength: photo.focalLength
       }
-    } else {
-      warnings.push('No S3 key found for photo, only removing metadata');
+    });
+  } catch (error) {
+    console.error('Error fetching photo:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch photo' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+): Promise<NextResponse> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { slug } = request.nextUrl.pathname.match(/\/photos\/(?<slug>[^/]+)/)?.groups ?? {};
+    
+    if (!slug || !ObjectId.isValid(slug)) {
+      return NextResponse.json(
+        { error: 'Invalid photo ID' },
+        { status: 400 }
+      );
+    }
+
+    const db = await connectToDatabase();
+    const photos = db.connection.db.collection('photos');
+
+    // Find the photo first to get the S3 key
+    const photo = await photos.findOne(
+      { _id: new ObjectId(slug) },
+      { maxTimeMS: 5000 } // Set a 5-second timeout for the query
+    );
+
+    if (!photo) {
+      return NextResponse.json(
+        { error: 'Photo not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete from S3 first
+    try {
+      await deleteObject(photo.s3Key);
+      if (photo.thumbnailUrl) {
+        await deleteObject(photo.thumbnailUrl.split('/').pop()!);
+      }
+    } catch (error) {
+      console.error('Error deleting from S3:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete photo from S3' },
+        { status: 500 }
+      );
     }
 
     // Delete from MongoDB
-    const result = await photos.deleteOne({ _id: new ObjectId(slug) });
+    const result = await photos.deleteOne(
+      { _id: new ObjectId(slug) },
+      { maxTimeMS: 5000 } // Set a 5-second timeout for the query
+    );
+
     if (result.deletedCount === 0) {
       return NextResponse.json(
         { error: 'Failed to delete photo from database' },
@@ -109,18 +129,11 @@ export async function DELETE(
       );
     }
 
-    return NextResponse.json({
-      message: 'Photo deleted successfully',
-      photoId: slug,
-      warnings: warnings.length > 0 ? warnings : undefined
-    });
+    return NextResponse.json({ message: 'Photo deleted successfully' });
   } catch (error) {
     console.error('Error deleting photo:', error);
     return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Failed to delete photo',
-        warnings
-      },
+      { error: 'Failed to delete photo' },
       { status: 500 }
     );
   }
@@ -129,36 +142,32 @@ export async function DELETE(
 export async function PATCH(
   request: NextRequest,
 ): Promise<NextResponse> {
-  const { slug } = request.nextUrl.pathname.match(/\/photos\/(?<slug>[^/]+)/)?.groups ?? {};
-  
   try {
-    // Check authentication
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    if (!ObjectId.isValid(slug)) {
+    const { slug } = request.nextUrl.pathname.match(/\/photos\/(?<slug>[^/]+)/)?.groups ?? {};
+    
+    if (!slug || !ObjectId.isValid(slug)) {
       return NextResponse.json(
         { error: 'Invalid photo ID' },
         { status: 400 }
       );
     }
 
-    const updates = await request.json();
+    const db = await connectToDatabase();
+    const photos = db.connection.db.collection('photos');
 
-    // Validate required fields
-    if (!updates.title && !updates.description && !updates.tags && !updates.metadata) {
-      return NextResponse.json(
-        { error: 'No valid fields to update' },
-        { status: 400 }
-      );
-    }
+    const photo = await photos.findOne(
+      { _id: new ObjectId(slug) },
+      { maxTimeMS: 5000 } // Set a 5-second timeout for the query
+    );
 
-    const db = await connectToMongoDB();
-    const photos = db.collection('photos');
-
-    const photo = await photos.findOne({ _id: new ObjectId(slug) });
     if (!photo) {
       return NextResponse.json(
         { error: 'Photo not found' },
@@ -166,47 +175,58 @@ export async function PATCH(
       );
     }
 
-    type PhotoUpdateFields = {
-      dateUpdated: Date;
-      title?: string;
-      description?: string;
-      tags?: string[];
-      metadata?: {
-        dateTaken?: Date;
-        camera?: string;
-        lens?: string;
-        settings?: {
-          aperture?: string;
-          shutterSpeed?: string;
-          iso?: number;
-          focalLength?: string;
-        };
-      };
-    };
+    const body = await request.json();
+    const {
+      title,
+      description,
+      category,
+      tags,
+      location,
+      camera,
+      lens,
+      aperture,
+      shutterSpeed,
+      iso,
+      focalLength,
+      dateTaken
+    } = body;
 
-    const updateFields: PhotoUpdateFields = { dateUpdated: new Date() };
-    if (updates.title !== undefined) updateFields.title = updates.title;
-    if (updates.description !== undefined) updateFields.description = updates.description;
-    if (updates.tags !== undefined) updateFields.tags = updates.tags;
-    if (updates.metadata !== undefined) updateFields.metadata = { ...photo.metadata, ...updates.metadata };
+    const updateFields: { [key: string]: any } = {};
+
+    if (title !== undefined) updateFields.title = title;
+    if (description !== undefined) updateFields.description = description;
+    if (category !== undefined) updateFields.category = category;
+    if (tags !== undefined) updateFields.tags = tags;
+    if (location !== undefined) updateFields.location = location;
+    if (camera !== undefined) updateFields.camera = camera;
+    if (lens !== undefined) updateFields.lens = lens;
+    if (aperture !== undefined) updateFields.aperture = aperture;
+    if (shutterSpeed !== undefined) updateFields.shutterSpeed = shutterSpeed;
+    if (iso !== undefined) updateFields.iso = iso;
+    if (focalLength !== undefined) updateFields.focalLength = focalLength;
+    if (dateTaken !== undefined) updateFields.dateTaken = new Date(dateTaken);
 
     const result = await photos.updateOne(
       { _id: new ObjectId(slug) },
-      { $set: updateFields }
+      { $set: updateFields },
+      { maxTimeMS: 5000 } // Set a 5-second timeout for the query
     );
 
     if (result.modifiedCount === 0) {
       return NextResponse.json(
-        { error: 'Failed to update photo' },
-        { status: 500 }
+        { error: 'No changes made to photo' },
+        { status: 400 }
       );
     }
 
-    const updatedPhoto = await photos.findOne({ _id: new ObjectId(slug) });
+    const updatedPhoto = await photos.findOne(
+      { _id: new ObjectId(slug) },
+      { maxTimeMS: 5000 } // Set a 5-second timeout for the query
+    );
 
     if (!updatedPhoto) {
       return NextResponse.json(
-        { error: 'Failed to retrieve updated photo' },
+        { error: 'Failed to fetch updated photo' },
         { status: 500 }
       );
     }
@@ -216,17 +236,28 @@ export async function PATCH(
         _id: updatedPhoto._id.toString(),
         title: updatedPhoto.title,
         description: updatedPhoto.description,
-        url: updatedPhoto.url,
-        tags: updatedPhoto.tags,
-        metadata: updatedPhoto.metadata,
-        dateCreated: updatedPhoto.dateCreated,
-        dateUpdated: updatedPhoto.dateUpdated
+        url: updatedPhoto.url || `${process.env.NEXT_PUBLIC_CLOUDFRONT_URL}/${updatedPhoto.s3Key}`,
+        s3Key: updatedPhoto.s3Key,
+        thumbnailUrl: updatedPhoto.thumbnailUrl,
+        category: updatedPhoto.category,
+        camera: updatedPhoto.camera,
+        lens: updatedPhoto.lens,
+        tags: updatedPhoto.tags?.sort() ?? [],
+        location: updatedPhoto.location,
+        dateTaken: updatedPhoto.dateTaken instanceof Date ? updatedPhoto.dateTaken.toISOString() : updatedPhoto.dateTaken,
+        dateUploaded: updatedPhoto.dateUploaded instanceof Date ? updatedPhoto.dateUploaded.toISOString() : updatedPhoto.dateUploaded,
+        width: updatedPhoto.width,
+        height: updatedPhoto.height,
+        aperture: updatedPhoto.aperture,
+        shutterSpeed: updatedPhoto.shutterSpeed,
+        iso: updatedPhoto.iso,
+        focalLength: updatedPhoto.focalLength
       }
     });
   } catch (error) {
     console.error('Error updating photo:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update photo' },
+      { error: 'Failed to update photo' },
       { status: 500 }
     );
   }

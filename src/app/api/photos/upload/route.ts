@@ -18,6 +18,7 @@ interface ExifData {
   aperture?: string;
   exposureTime?: string;
   iso?: number;
+  dateTaken?: Date;
 }
 
 interface ExifImageData {
@@ -32,6 +33,7 @@ interface ExifImageData {
     ISO?: number;
     FocalLength?: number;
     LensModel?: string;
+    DateTimeOriginal?: string;
     [key: string]: unknown;
   };
 }
@@ -113,6 +115,19 @@ export async function POST(request: NextRequest) {
 
           const exif = await getExif(Buffer.from(buffer));
           if (exif && exif.image && exif.exif) {
+            // Parse EXIF date (format: YYYY:MM:DD HH:mm:ss)
+            let dateTaken: Date | undefined;
+            if (exif.exif.DateTimeOriginal) {
+              const [datePart, timePart] = exif.exif.DateTimeOriginal.split(' ');
+              if (datePart && timePart) {
+                const [year, month, day] = datePart.split(':').map(Number);
+                const [hour, minute, second] = timePart.split(':').map(Number);
+                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                  dateTaken = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+                }
+              }
+            }
+
             exifData = {
               make: exif.image.Make,
               model: exif.image.Model,
@@ -120,7 +135,8 @@ export async function POST(request: NextRequest) {
               focalLength: exif.exif.FocalLength ? `${exif.exif.FocalLength}mm` : undefined,
               aperture: exif.exif.FNumber ? `f/${exif.exif.FNumber}` : undefined,
               exposureTime: exif.exif.ExposureTime ? `${exif.exif.ExposureTime}s` : undefined,
-              iso: exif.exif.ISO
+              iso: exif.exif.ISO,
+              dateTaken: dateTaken
             };
           }
         } catch (error) {
@@ -141,14 +157,22 @@ export async function POST(request: NextRequest) {
         dateCreated: new Date(),
         dateUpdated: new Date(),
         tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        width: metadata.width,
-        height: metadata.height,
-        camera: exifData?.make && exifData.model ? `${exifData.make} ${exifData.model}` : undefined,
-        lens: exifData?.lensModel,
-        focalLength: exifData?.focalLength,
-        aperture: exifData?.aperture,
-        shutterSpeed: exifData?.exposureTime,
-        iso: exifData?.iso,
+        metadata: {
+          dateTaken: exifData?.dateTaken && !isNaN(exifData.dateTaken.getTime()) 
+            ? exifData.dateTaken 
+            : new Date(), // Fallback to current date if EXIF date is invalid
+          camera: exifData?.make && exifData.model ? `${exifData.make} ${exifData.model}` : undefined,
+          lens: exifData?.lensModel,
+          location: location || undefined,
+          settings: {
+            aperture: exifData?.aperture,
+            shutterSpeed: exifData?.exposureTime,
+            iso: exifData?.iso,
+            focalLength: exifData?.focalLength,
+            width: metadata.width,
+            height: metadata.height
+          }
+        }
       };
 
       // Create and save the photo

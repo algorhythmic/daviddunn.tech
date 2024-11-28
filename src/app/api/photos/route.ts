@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
-import { connectToMongoDB } from '@/lib/db';
+import { connectToDatabase } from '@/lib/db';
 import Photo from '@/models/mongodb/Photo';
 import { ObjectId } from 'mongodb';
 import { generatePresignedUploadUrl, generateS3Key, deletePhotoFromS3 } from '@/lib/s3';
 
 export async function GET(request: NextRequest) {
   try {
-    await connectToMongoDB();
+    await connectToDatabase();
 
     // Check if this is an admin request
     const session = await getServerSession(authOptions);
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await connectToMongoDB();
+    await connectToDatabase();
 
     const uploads = await Promise.all(
       files.map(async (file) => {
@@ -147,7 +147,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    await connectToMongoDB();
+    await connectToDatabase();
 
     const photo = await Photo.findById(photoId);
     if (!photo) {
@@ -199,7 +199,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Photo ID is required' }, { status: 400 });
     }
 
-    await connectToMongoDB();
+    await connectToDatabase();
     const photo = await Photo.findById(id);
 
     if (!photo) {
