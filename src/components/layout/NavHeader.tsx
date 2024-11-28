@@ -52,7 +52,7 @@ export function NavHeader() {
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-3">
             <Avatar>
-              <AvatarImage src="/images/profile.svg" alt="David Dunn" />
+              <AvatarImage src="/images/profile.svg" alt="David Dunn" width={40} height={40} />
               <AvatarFallback className="bg-cyan-600 text-white">DD</AvatarFallback>
             </Avatar>
             <span className="font-bold">David Dunn</span>
@@ -87,7 +87,7 @@ export function NavHeader() {
                 <SheetTitle>Navigation Menu</SheetTitle>
                 <div className="flex items-center space-x-3">
                   <Avatar>
-                    <AvatarImage src="/images/profile.svg" alt="David Dunn" />
+                    <AvatarImage src="/images/profile.svg" alt="David Dunn" width={40} height={40} />
                     <AvatarFallback className="bg-cyan-600 text-white">DD</AvatarFallback>
                   </Avatar>
                 </div>

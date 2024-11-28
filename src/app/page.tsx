@@ -64,7 +64,7 @@ export default function Home() {
         {/* Mobile Profile Picture - Only shown on mobile */}
         <div className="flex justify-center md:hidden">
           <Avatar className="h-16 w-16">
-            <AvatarImage src="/images/profile.svg" alt="David Dunn" />
+            <AvatarImage src="/images/profile.svg" alt="David Dunn" width={64} height={64} />
             <AvatarFallback className="text-xl bg-cyan-600 text-white">DD</AvatarFallback>
           </Avatar>
         </div>
@@ -105,6 +105,7 @@ export default function Home() {
                         src={app.imageUrl}
                         alt={app.title}
                         fill
+                        priority={index === currentAppIndex}
                         className="object-cover transition-transform group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/60" />

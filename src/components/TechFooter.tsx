@@ -64,6 +64,7 @@ export default function TechFooter() {
                     alt={tech.name}
                     width={24}
                     height={24}
+                    style={{ width: 'auto', height: 'auto' }}
                     className={`transition-transform hover:scale-110 ${tech.name === 'MongoDB' ? 'scale-75' : ''}`}
                   />
                 </div>
