@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { streamlitApps } from '@/data/streamlit-apps';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PhotoModal from '@/components/PhotoModal';
-import { AnalyticsPreview } from '@/components/analytics/AnalyticsPreview';
+import AnalyticsPreview from '@/components/analytics/AnalyticsPreview';
 import { IPhoto, BlogPost } from '@/types/schema';
 import { CalendarDays, ArrowRight, Camera } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -16,6 +16,7 @@ export default function Home() {
   const [selectedPhoto, setSelectedPhoto] = useState<IPhoto | null>(null);
   const [photos, setPhotos] = useState<IPhoto[]>([]);
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
 
   useEffect(() => {
     const appIntervalId = setInterval(() => {
@@ -41,22 +42,55 @@ export default function Home() {
       }
     };
 
+    fetchPhotos();
+  }, []);
+
+  useEffect(() => {
     const fetchBlogPosts = async () => {
+      setIsLoadingPosts(true);
       try {
-        const response = await fetch('/api/blog?limit=2');
+        console.log('Fetching latest blog posts...');
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/blog?limit=2&status=published&_t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+
         if (!response.ok) {
-          throw new Error('Failed to fetch blog posts');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch blog posts');
         }
+
         const data = await response.json();
-        setLatestPosts(data.posts || []);
+        console.log('Raw API response:', data);
+        console.log('Posts from API:', data.posts);
+        
+        if (Array.isArray(data.posts)) {
+          console.log('Posts array before state update:', data.posts);
+          setLatestPosts(data.posts);
+          console.log('State updated with posts');
+        } else {
+          console.error('Unexpected posts data format:', data);
+          setLatestPosts([]);
+        }
       } catch (error) {
         console.error('Error fetching blog posts:', error);
+        setLatestPosts([]);
+      } finally {
+        setIsLoadingPosts(false);
       }
     };
 
-    fetchPhotos();
     fetchBlogPosts();
   }, []);
+
+  useEffect(() => {
+    console.log('Latest posts state updated:', latestPosts);
+  }, [latestPosts]);
 
   return (
     <main className="container mx-auto px-4 py-2">
@@ -136,28 +170,41 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {latestPosts.map(post => (
-                  <Link 
-                    key={post._id.toString()} 
-                    href={`/blog/${post.slug}`}
-                    className="block p-4 rounded-lg hover:bg-muted transition-colors"
-                  >
-                    <h3 className="font-medium mb-2">{post.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <CalendarDays className="h-4 w-4" />
-                        <time dateTime={post.publishedAt.toString()}>
-                          {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </time>
-                      </div>
-                      <span>{post.readingTime} min read</span>
-                    </div>
-                  </Link>
-                ))}
+                {isLoadingPosts ? (
+                  <p>Loading...</p>
+                ) : latestPosts.length === 0 ? (
+                  <p>No posts available</p>
+                ) : (
+                  latestPosts.map(post => {
+                    console.log('Rendering post:', post);
+                    return (
+                      <Link 
+                        key={post._id.toString()} 
+                        href={`/blog/${post.slug}`}
+                        className="block p-4 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <h3 className="font-medium mb-2">{post.title}</h3>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <CalendarDays className="h-4 w-4" />
+                            {post.publishedAt ? (
+                              <time dateTime={post.publishedAt.toString()}>
+                                {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </time>
+                            ) : (
+                              <span>Draft</span>
+                            )}
+                          </div>
+                          <span>{post.readingTime} min read</span>
+                        </div>
+                      </Link>
+                    );
+                  })
+                )}
               </div>
             </CardContent>
           </Card>

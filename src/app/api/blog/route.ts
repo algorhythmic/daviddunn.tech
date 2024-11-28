@@ -1,74 +1,92 @@
-import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const searchParams = new URL(request.url).searchParams;
+  const page = parseInt(searchParams.get('page') ?? '1');
+  const limit = parseInt(searchParams.get('limit') ?? '10');
+  const status = searchParams.get('status') ?? 'all';
+  const category = searchParams.get('category');
+
+  console.log('Connecting to MongoDB...');
+  const db = await connectToDatabase();
+  if (!db) {
+    throw new Error('Failed to connect to database');
+  }
+  console.log('Connected to MongoDB successfully');
+
+  // Build query
+  const query: { status?: string; category?: string } = {};
+
+  console.log('Request params:', { status, category, limit, page });
+
+  // Handle status
+  if (status !== 'all') {
+    query.status = status;
+  }
+  
+  if (category) {
+    query.category = category;
+  }
+  
+  console.log('MongoDB query:', JSON.stringify(query, null, 2));
+
   try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const page = parseInt(searchParams.get('page') || '1');
-    const status = searchParams.get('status') || 'published';
-    const category = searchParams.get('category');
-
-    console.log('Connecting to MongoDB...');
-    const { db } = await connectToDatabase();
-    console.log('Connected to MongoDB successfully');
+    // First, let's check all posts without any filters
+    const allPosts = await db.connection.db.collection('posts').find({}).toArray();
+    console.log('All posts in database:', allPosts);
     
-    // Build query
-    const query: Record<string, any> = {};
-    if (status !== 'all') {
-      query.status = status;
-    }
-    if (category) {
-      query.category = category;
-    }
-    console.log('Query parameters:', query);
-    
-    try {
-      const totalPosts = await db.collection('posts').countDocuments(query);
-      console.log('Total matching posts:', totalPosts);
-      
-      if (totalPosts === 0) {
-        console.log('No posts found matching query');
-        return NextResponse.json({
-          posts: [],
-          pagination: {
-            currentPage: page,
-            totalPages: 0,
-            totalPosts: 0,
-            hasMore: false
-          }
-        });
-      }
+    // Now check with our query
+    const totalPosts = await db.connection.db.collection('posts').countDocuments(query);
+    console.log('Total posts matching query:', totalPosts);
 
-      const totalPages = Math.ceil(totalPosts / limit);
-      
-      const posts = await db.collection('posts')
-        .find(query)
-        .sort({ publishedAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .toArray();
-
-      console.log(`Found ${posts.length} posts`);
-
+    if (totalPosts === 0) {
+      console.log('No posts found matching the query');
       return NextResponse.json({
-        posts: posts.map(post => ({
-          ...post,
-          _id: post._id.toString()
-        })),
+        posts: [],
         pagination: {
+          totalPosts: 0,
+          totalPages: 0,
           currentPage: page,
-          totalPages,
-          totalPosts,
-          hasMore: page < totalPages
-        }
+          hasMore: false,
+        },
       });
-    } catch (error) {
-      console.error('Error querying posts:', error);
-      throw error;
     }
+
+    const skip = (page - 1) * limit;
+    const totalPages = Math.ceil(totalPosts / limit);
+
+    const posts = await db.connection.db.collection('posts')
+      .find(query)
+      .sort({ publishedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+    
+    // Transform posts for client consumption
+    const transformedPosts = posts.map(post => ({
+      ...post,
+      _id: post._id.toString(), // Convert ObjectId to string
+      publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : null,
+      updatedAt: new Date(post.updatedAt).toISOString(),
+    }));
+
+    console.log(`Found ${posts.length} posts. Transformed posts:`, transformedPosts);
+
+    return NextResponse.json({
+      posts: transformedPosts,
+      pagination: {
+        totalPosts,
+        totalPages,
+        currentPage: page,
+        hasMore: page < totalPages,
+      },
+    });
   } catch (error) {
-    console.error('Error in GET /api/blog:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error fetching blog posts:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
