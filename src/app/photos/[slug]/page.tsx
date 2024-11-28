@@ -11,7 +11,7 @@ import ImageIcon from '@/components/ImageIcon';
 
 interface Props {
   params: Promise<{
-    id: string;
+    slug: string;
   }>;
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
@@ -22,7 +22,7 @@ export async function generateStaticParams() {
     await connectToDatabase();
     const photos = await PhotoModel.find().lean().exec();
     return photos.map((photo) => ({
-      id: (photo._id as unknown as { toString(): string }).toString(),
+      slug: (photo._id as unknown as { toString(): string }).toString(),
     }));
   } catch (error) {
     console.error('Error generating static params:', error);
@@ -30,14 +30,14 @@ export async function generateStaticParams() {
   }
 }
 
-async function getPhoto(id: string): Promise<IPhoto | null> {
+async function getPhoto(slug: string): Promise<IPhoto | null> {
   try {
-    if (!id || !ObjectId.isValid(id)) {
+    if (!slug || !ObjectId.isValid(slug)) {
       throw new Error('Invalid photo ID');
     }
 
     await connectToDatabase();
-    const photo = await PhotoModel.findById(id).lean();
+    const photo = await PhotoModel.findById(slug).lean();
     
     if (!photo) {
       return null;
@@ -77,7 +77,7 @@ async function getPhoto(id: string): Promise<IPhoto | null> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
-  const photo = await getPhoto(resolvedParams.id);
+  const photo = await getPhoto(resolvedParams.slug);
   if (!photo) return {};
 
   return {
@@ -88,7 +88,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PhotoPage({ params }: Props) {
   const resolvedParams = await params;
-  const photo = await getPhoto(resolvedParams.id);
+  const photo = await getPhoto(resolvedParams.slug);
   if (!photo) {
     notFound();
   }

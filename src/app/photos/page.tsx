@@ -71,7 +71,7 @@ export default async function PhotosPage() {
             return (
               <Link 
                 key={photo._id.toString()} 
-                href={`/photos/${photo._id.toString()}`}
+                href={`/photos/${photo._id}`}
               >
                 <Card className="h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
                   <CardHeader className="p-0">

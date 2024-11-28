@@ -9,16 +9,16 @@ export async function GET(
   request: NextRequest,
 ): Promise<NextResponse> {
   try {
-    const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
+    const { slug } = request.nextUrl.pathname.match(/\/photos\/(?<slug>[^/]+)/)?.groups ?? {};
     
-    if (!ObjectId.isValid(id)) {
+    if (!ObjectId.isValid(slug)) {
       throw new Error('Invalid photo ID');
     }
 
     const db = await connectToMongoDB();
     const photos = db.collection('photos');
 
-    const photo = await photos.findOne({ _id: new ObjectId(id) });
+    const photo = await photos.findOne({ _id: new ObjectId(slug) });
     if (!photo) {
       throw new Error('Photo not found');
     }
@@ -59,7 +59,7 @@ export async function GET(
 export async function DELETE(
   request: NextRequest,
 ): Promise<NextResponse> {
-  const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
+  const { slug } = request.nextUrl.pathname.match(/\/photos\/(?<slug>[^/]+)/)?.groups ?? {};
   const warnings: string[] = [];
   
   try {
@@ -69,7 +69,7 @@ export async function DELETE(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    if (!ObjectId.isValid(id)) {
+    if (!ObjectId.isValid(slug)) {
       return NextResponse.json(
         { error: 'Invalid photo ID' },
         { status: 400 }
@@ -80,7 +80,7 @@ export async function DELETE(
     const photos = db.collection('photos');
 
     // Find the photo first to get the S3 key
-    const photo = await photos.findOne({ _id: new ObjectId(id) });
+    const photo = await photos.findOne({ _id: new ObjectId(slug) });
     if (!photo) {
       return NextResponse.json(
         { error: 'Photo not found' },
@@ -101,7 +101,7 @@ export async function DELETE(
     }
 
     // Delete from MongoDB
-    const result = await photos.deleteOne({ _id: new ObjectId(id) });
+    const result = await photos.deleteOne({ _id: new ObjectId(slug) });
     if (result.deletedCount === 0) {
       return NextResponse.json(
         { error: 'Failed to delete photo from database' },
@@ -111,7 +111,7 @@ export async function DELETE(
 
     return NextResponse.json({
       message: 'Photo deleted successfully',
-      photoId: id,
+      photoId: slug,
       warnings: warnings.length > 0 ? warnings : undefined
     });
   } catch (error) {
@@ -129,7 +129,7 @@ export async function DELETE(
 export async function PATCH(
   request: NextRequest,
 ): Promise<NextResponse> {
-  const { id } = request.nextUrl.pathname.match(/\/photos\/(?<id>[^/]+)/)?.groups ?? {};
+  const { slug } = request.nextUrl.pathname.match(/\/photos\/(?<slug>[^/]+)/)?.groups ?? {};
   
   try {
     // Check authentication
@@ -138,7 +138,7 @@ export async function PATCH(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    if (!ObjectId.isValid(id)) {
+    if (!ObjectId.isValid(slug)) {
       return NextResponse.json(
         { error: 'Invalid photo ID' },
         { status: 400 }
@@ -158,7 +158,7 @@ export async function PATCH(
     const db = await connectToMongoDB();
     const photos = db.collection('photos');
 
-    const photo = await photos.findOne({ _id: new ObjectId(id) });
+    const photo = await photos.findOne({ _id: new ObjectId(slug) });
     if (!photo) {
       return NextResponse.json(
         { error: 'Photo not found' },
@@ -191,7 +191,7 @@ export async function PATCH(
     if (updates.metadata !== undefined) updateFields.metadata = { ...photo.metadata, ...updates.metadata };
 
     const result = await photos.updateOne(
-      { _id: new ObjectId(id) },
+      { _id: new ObjectId(slug) },
       { $set: updateFields }
     );
 
@@ -202,7 +202,14 @@ export async function PATCH(
       );
     }
 
-    const updatedPhoto = await photos.findOne({ _id: new ObjectId(id) });
+    const updatedPhoto = await photos.findOne({ _id: new ObjectId(slug) });
+
+    if (!updatedPhoto) {
+      return NextResponse.json(
+        { error: 'Failed to retrieve updated photo' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       photo: {
