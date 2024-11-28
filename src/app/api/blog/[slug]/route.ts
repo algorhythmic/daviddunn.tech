@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -156,6 +156,64 @@ export async function PUT(
     console.error('Error updating blog post:', error);
     return NextResponse.json(
       { error: 'Failed to update blog post' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: { slug: string } }
+): Promise<NextResponse> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const slug = await context.params.slug;
+    const { db } = await connectToDatabase();
+
+    // Find the post to get its featured image key
+    const post = await db.collection('posts').findOne({ slug });
+    if (!post) {
+      return NextResponse.json(
+        { error: 'Blog post not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the post from MongoDB
+    const result = await db.collection('posts').deleteOne({ slug });
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { error: 'Failed to delete blog post' },
+        { status: 500 }
+      );
+    }
+
+    // If the post had a featured image, delete it from S3
+    if (post.featuredImage && post.featuredImage.startsWith(CLOUDFRONT_URL)) {
+      const s3Key = post.featuredImage.replace(`${CLOUDFRONT_URL}/`, '');
+      try {
+        await s3Client.send(new DeleteObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: s3Key
+        }));
+      } catch (error) {
+        console.error('Error deleting featured image from S3:', error);
+        // Continue with the response even if S3 deletion fails
+      }
+    }
+
+    return NextResponse.json({ message: 'Blog post deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting blog post:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete blog post', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

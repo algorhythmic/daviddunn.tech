@@ -16,6 +16,7 @@ interface Props {
   params: {
     slug: string;
   };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
 async function getBlogPost(slug: string) {
@@ -34,7 +35,7 @@ async function getBlogPost(slug: string) {
   }
 }
 
-export default async function BlogPostPage({ params }: Props) {
+export default async function BlogPostPage({ params, searchParams }: Props) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return notFound();
