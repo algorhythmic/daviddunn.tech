@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { connectToMongoDB } from '@/lib/db';
+import { connectToDatabase } from '@/lib/db';
 import { AboutContent, IAboutContent } from '@/models/about';
 import { Types, Document } from 'mongoose';
 
@@ -13,15 +13,27 @@ type LeanAboutContent = Omit<IAboutContent, keyof Document> & {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
+    
+    // Extract data from FormData
     const statement = formData.get('statement') as string;
     const resumeUrl = formData.get('resumeUrl') as string;
+    
+    // Extract preview images
+    const previewImages = {
+      resume: formData.get('previewImages[resume]') as string,
+      linkedin: formData.get('previewImages[linkedin]') as string,
+      github: formData.get('previewImages[github]') as string,
+      instagram: formData.get('previewImages[instagram]') as string,
+    };
+    
+    // Extract social links
     const socialLinks = {
-      linkedin: formData.get('linkedin') as string,
-      github: formData.get('github') as string,
-      instagram: formData.get('instagram') as string,
+      linkedin: formData.get('socialLinks[linkedin]') as string,
+      github: formData.get('socialLinks[github]') as string,
+      instagram: formData.get('socialLinks[instagram]') as string,
     };
 
-    await connectToMongoDB();
+    await connectToDatabase();
 
     // Validate required fields
     if (!statement) {
@@ -38,6 +50,7 @@ export async function POST(request: NextRequest) {
         $set: {
           statement,
           resumeUrl,
+          previewImages,
           socialLinks,
           lastUpdated: new Date(),
         }
@@ -45,7 +58,7 @@ export async function POST(request: NextRequest) {
       {
         upsert: true,
         new: true,
-        runValidators: false, // Disable validation since we're handling it manually
+        runValidators: false,
         lean: true
       }
     )) as LeanAboutContent;
@@ -55,7 +68,7 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to update content');
     }
 
-    // Convert _id to string and return response
+    // Return the updated content with string _id
     return NextResponse.json({
       content: {
         ...content,
@@ -80,11 +93,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    await connectToMongoDB();
+    await connectToDatabase();
     const content = (await AboutContent.findOne().lean()) as LeanAboutContent;
 
     if (!content) {
-      return NextResponse.json({}, {
+      return NextResponse.json({
+        content: null
+      }, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
@@ -93,7 +108,7 @@ export async function GET() {
       });
     }
 
-    // Convert _id to string
+    // Return the content with string _id
     return NextResponse.json({
       content: {
         ...content,

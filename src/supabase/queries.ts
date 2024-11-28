@@ -1,4 +1,4 @@
-import { supabase } from '../lib/db';
+import { supabase } from '@/lib/supabase';
 
 // Streamlit app data queries
 export async function getStreamlitAppData() {
@@ -26,6 +26,24 @@ export async function getAppAnalytics() {
     .from('app_analytics')
     .select('*')
     .order('timestamp', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function getAnalyticsApps() {
+  const { data, error } = await supabase
+    .from('analytics_apps')
+    .select('*')
+    .order('display_order');
+  if (error) throw error;
+  return data;
+}
+
+export async function getStreamlitApps() {
+  const { data, error } = await supabase
+    .from('streamlit_apps')
+    .select('*')
+    .order('display_order');
   if (error) throw error;
   return data;
 }

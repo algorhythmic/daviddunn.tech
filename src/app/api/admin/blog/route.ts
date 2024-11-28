@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
-import { connectToDatabase } from '@/lib/mongodb';
-import { BlogPost } from '@/models/mongodb/BlogPost';
+import { connectToDatabase } from '@/lib/db';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({
@@ -85,28 +84,32 @@ export async function POST(request: NextRequest) {
 
     console.log('Connecting to MongoDB...');
     // Connect to MongoDB
-    const { db } = await connectToDatabase();
+    const db = await connectToDatabase();
+    if (!db) {
+      throw new Error('Failed to connect to database');
+    }
     console.log('Connected to MongoDB');
-    
+
     // Create blog post document
     const blogPost = {
       title,
-      slug,
       content,
-      excerpt,
-      category,
-      tags,
+      slug,
       status,
-      readingTime,
-      featuredImage: featuredImageUrl,
-      publishedAt: status === 'published' ? new Date() : null,
+      published: status === 'published',
+      author: session.user.email,
+      createdAt: new Date(),
       updatedAt: new Date(),
+      publishedAt: status === 'published' ? new Date() : null,
+      category,
+      description: excerpt,
+      featuredImage: featuredImageUrl,
     };
 
     console.log('Creating blog post:', blogPost);
 
     // Insert into MongoDB
-    const result = await db.collection('posts').insertOne(blogPost);
+    const result = await db.connection.db.collection('posts').insertOne(blogPost);
 
     if (!result.insertedId) {
       console.error('Failed to insert blog post');

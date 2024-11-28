@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToMongoDB } from '@/lib/db';
+import { connectToDatabase } from '@/lib/db';
 import { PostModel } from '@/models/post';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const published = searchParams.get('published') !== 'false';
 
-    await connectToMongoDB();
+    await connectToDatabase();
     
     const query: PostQuery = { published };
     
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
-    await connectToMongoDB();
+    await connectToDatabase();
 
     if (data.published) {
       data.publishedAt = new Date();
@@ -120,7 +120,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    await connectToMongoDB();
+    await connectToDatabase();
 
     if (updateData.published && !updateData.publishedAt) {
       updateData.publishedAt = new Date();
@@ -170,7 +170,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await connectToMongoDB();
+    await connectToDatabase();
 
     const post = await PostModel.findByIdAndDelete(id);
 

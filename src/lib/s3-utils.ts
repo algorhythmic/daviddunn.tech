@@ -28,14 +28,21 @@ export const extractS3KeyFromUrl = (url: string): string => {
 
 export async function uploadToS3(file: File, path: string): Promise<string> {
   try {
-    // First, request a pre-signed URL from our API
+    // Clean the filename and create the full path
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '-');
+    const timestamp = Date.now();
+    const fullPath = `${path}/${timestamp}-${cleanFileName}`;
+    
+    console.log('Uploading file to path:', fullPath);
+
+    // Request a pre-signed URL from our API
     const response = await fetch('/api/s3/upload-url', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        fileName: `${path}/${Date.now()}-${file.name}`,
+        fileName: fullPath,
         contentType: file.type,
       }),
     });
@@ -64,7 +71,6 @@ export async function uploadToS3(file: File, path: string): Promise<string> {
     }
 
     console.log('Upload successful:', fileUrl);
-
     return fileUrl;
   } catch (error) {
     console.error('Error uploading to S3:', error);
@@ -88,7 +94,7 @@ export async function deleteFromS3(fileUrl: string | undefined | null): Promise<
 
     // Extract the S3 key from the CloudFront URL
     const key = extractS3KeyFromUrl(fileUrl);
-    console.log('Deleting file with key:', key);
+    console.log('Attempting to delete file with key:', key);
 
     // Request deletion through our API
     const response = await fetch('/api/s3/delete', {
@@ -100,17 +106,13 @@ export async function deleteFromS3(fileUrl: string | undefined | null): Promise<
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Delete response:', errorText);
-      throw new Error(`Failed to delete file: ${errorText}`);
+      const errorData = await response.json();
+      console.error('Delete request failed:', errorData);
+      throw new Error(errorData.error || 'Failed to delete file');
     }
 
-    console.log('File deleted successfully:', fileUrl);
+    console.log('Successfully deleted file with key:', key);
   } catch (error) {
-    if (error instanceof Error && error.message.includes('URL is not a CloudFront URL')) {
-      console.log('Skipping deletion for non-CloudFront URL:', fileUrl);
-      return;
-    }
     console.error('Error deleting from S3:', error);
     if (error instanceof Error) {
       console.error('Error details:', {

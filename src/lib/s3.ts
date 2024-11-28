@@ -16,6 +16,21 @@ if (!CLOUDFRONT_URL) {
   console.error('NEXT_PUBLIC_CLOUDFRONT_URL environment variable is not defined');
 }
 
+export async function deleteObject(key: string) {
+  const command = new DeleteObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+  });
+
+  try {
+    await s3Client.send(command);
+    console.log(`Successfully deleted object with key: ${key}`);
+  } catch (error) {
+    console.error(`Error deleting object with key ${key}:`, error);
+    throw error;
+  }
+}
+
 export async function generatePresignedUploadUrl(key: string, contentType: string) {
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,

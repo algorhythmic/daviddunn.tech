@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth.config';
-import { connectToMongoDB } from '@/lib/db';
+import { connectToDatabase } from '@/lib/db';
 import { ObjectId } from 'mongodb';
 
 type RouteContext = {
@@ -16,8 +16,8 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.role || session.user.role !== 'admin') {
-      return Response.json(
-        { error: 'Unauthorized' },
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401 }
       );
     }
@@ -26,33 +26,39 @@ export async function DELETE(
     const { slug } = params;
     
     if (!slug || !ObjectId.isValid(slug)) {
-      return Response.json(
-        { error: 'Invalid photo ID' },
+      return new NextResponse(
+        JSON.stringify({ error: 'Invalid photo ID' }),
         { status: 400 }
       );
     }
 
-    const db = await connectToMongoDB();
-    const result = await db.collection('photos').deleteOne({
+    const db = await connectToDatabase();
+    if (!db) {
+      throw new Error('Failed to connect to database');
+    }
+
+    const photo = await db.connection.db.collection('photos').findOne({
+      _id: new ObjectId(slug)
+    });
+
+    if (!photo) {
+      return new NextResponse(null, { status: 404 });
+    }
+
+    const result = await db.connection.db.collection('photos').deleteOne({
       _id: new ObjectId(slug)
     });
 
     if (result.deletedCount === 0) {
-      return Response.json(
-        { error: 'Photo not found' },
-        { status: 404 }
-      );
+      return new NextResponse(null, { status: 404 });
     }
 
-    return Response.json(
-      { message: 'Photo deleted successfully' },
-      { status: 200 }
-    );
+    return new NextResponse(null, { status: 204 });
 
   } catch (error) {
     console.error('Error deleting photo:', error);
-    return Response.json(
-      { error: 'Failed to delete photo' },
+    return new NextResponse(
+      JSON.stringify({ error: 'Failed to delete photo' }),
       { status: 500 }
     );
   }

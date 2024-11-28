@@ -15,6 +15,7 @@ export default function AboutPage() {
     const fetchAboutContent = async () => {
       try {
         const response = await fetch('/api/admin/about', {
+          cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -23,9 +24,10 @@ export default function AboutPage() {
         });
         if (!response.ok) throw new Error('Failed to fetch about content');
         const data = await response.json();
-        console.log('Fetched about content:', data); // Debug log
-        console.log('Resume URL:', data?.resumeUrl); // Debug resume URL specifically
-        setAboutContent(data);
+        console.log('Fetched about content:', data);
+        if (data.content) {
+          setAboutContent(data.content);
+        }
       } catch (error) {
         console.error('Error fetching about content:', error);
       } finally {
@@ -34,15 +36,16 @@ export default function AboutPage() {
     };
 
     fetchAboutContent();
+    // Refresh content every 30 seconds
     const interval = setInterval(fetchAboutContent, 30000);
-
     return () => clearInterval(interval);
   }, []);
 
-  // Move profiles inside the component and use useMemo to avoid unnecessary recalculations
   const profiles = useMemo(() => {
-    console.log('Current resumeUrl:', aboutContent?.resumeUrl); // Debug current resume URL
+    console.log('Current about content:', aboutContent);
     const hasResume = aboutContent?.resumeUrl && aboutContent.resumeUrl.trim() !== '';
+    const resumePreview = aboutContent?.previewImages?.resume;
+    console.log('Has resume:', hasResume, 'Preview URL:', resumePreview);
 
     return [
       {
@@ -50,6 +53,7 @@ export default function AboutPage() {
         description: 'View my professional experience, skills, and educational background.',
         icon: FileText,
         link: hasResume ? aboutContent.resumeUrl : undefined,
+        previewUrl: resumePreview,
         previewText: hasResume 
           ? 'Download my latest resume to learn about my professional journey and technical expertise.'
           : 'Resume not available. Please check back later.',
@@ -58,25 +62,28 @@ export default function AboutPage() {
         title: 'LinkedIn',
         description: 'Connect with me on LinkedIn and explore my professional network.',
         imageUrl: '/icons/linkedin.svg',
-        link: 'https://www.linkedin.com/in/daviddunntech',
+        link: aboutContent?.socialLinks?.linkedin || 'https://www.linkedin.com/in/daviddunntech',
+        previewUrl: aboutContent?.previewImages?.linkedin,
         previewText: 'Software Engineer with experience in full-stack development and cloud technologies.',
       },
       {
         title: 'GitHub',
         description: 'Explore my open-source contributions and personal projects.',
         imageUrl: '/icons/github.svg',
-        link: 'https://github.com/davidadunn',
+        link: aboutContent?.socialLinks?.github || 'https://github.com/davidadunn',
+        previewUrl: aboutContent?.previewImages?.github,
         previewText: 'Check out my coding projects and contributions to the developer community.',
       },
       {
         title: 'Instagram',
         description: 'Follow my photography and personal adventures.',
         imageUrl: '/icons/instagram.svg',
-        link: 'https://www.instagram.com/davidadunn',
+        link: aboutContent?.socialLinks?.instagram || 'https://www.instagram.com/davidadunn',
+        previewUrl: aboutContent?.previewImages?.instagram,
         previewText: 'Visual stories from my travels and everyday moments.',
       },
     ];
-  }, [aboutContent?.resumeUrl]); // Only recalculate when resumeUrl changes
+  }, [aboutContent]);
 
   if (isLoading) {
     return (
@@ -122,7 +129,15 @@ export default function AboutPage() {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="relative w-full aspect-video bg-muted rounded-md flex items-center justify-center p-8">
-                      {profile.icon ? (
+                      {profile.previewUrl ? (
+                        <Image
+                          src={profile.previewUrl}
+                          alt={profile.title}
+                          fill
+                          className="object-contain p-2"
+                          unoptimized // Add this to bypass image optimization for S3 URLs
+                        />
+                      ) : profile.icon ? (
                         <profile.icon className="w-12 h-12 text-foreground" />
                       ) : (
                         <Image
