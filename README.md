@@ -1,8 +1,6 @@
-# David Dunn's Personal Website (daviddunn.tech)
+## Description
 
 This repository contains the source code for David Dunn's personal website, hosted at `daviddunn.tech`. It's a modern web application built with Next.js and React, designed to showcase David's profile, projects, and other relevant information.
-
-## Description
 
 It features a dynamic and responsive user interface with various sections, including:
 - A **Hero** section for an impactful introduction.
