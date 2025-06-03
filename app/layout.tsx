@@ -3,10 +3,10 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'David\'s Website',
-  description: 'Created with the help of v0',
+  description: 'Welcome to my website!',
   generator: 'David & v0.dev',
   icons: {
-    icon: '/rocket.svg',
+    icon: '/rocket_launch.svg',
   },
 }
 
